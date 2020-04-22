@@ -74,6 +74,11 @@ def go(dest_folder, source_folder):
     messagebox.showinfo(root,"成功將所有 Excel 輸出成 pdf")
     root.destroy()
 
+
+
+
+
+
 class Reader():
     source_folder=os.getcwd()
     #source_folder can only be used in Reader.source_folder and it cannot be used in any instance
@@ -92,7 +97,7 @@ class Reader():
         Reader.source_folder = filedialog.askdirectory()
         if not Reader.source_folder:
             Reader.source_folder =old_folder
-        labelsource["text"] = '輸出資料夾:  '+Reader.source_folder
+        labelsource["text"] = '輸入資料夾:  '+Reader.source_folder
         pb["maximum"] = len(glob.glob(Reader.source_folder+"\\*.xlsx"))
 
     def getData(self, data, task, sh=None):
@@ -245,11 +250,28 @@ def excel2doc(reader, file, destFolder):
     reader.getData( data,'Task3')
     reader.getData( data,'Task4')
     reader.getData( data,'Task5')
+
+
+    score2={}
+    score2["Task1"]=newScore(data["Task1"], 20.5, 7.25, 10, 3)
+   
+    score2['Task2']=newScore(data['Task2'], 29.5, 11, 10, 3)
+
+    score2['Task3']=newScore(data['Task3'], 29, 10, 10, 3)
+
+    score2['Task4']=newScore(data['Task4'], 69, 28, 10, 3)
+
+    score2['Task5']=newScore(data['Task5'], 31, 16, 10, 3)
+
     tableList2=[
-    ['',         '情境一：\n視覺掃描', '情境二：\n圓形序列','情境三：\n六邊形序列','情境四：\n圓形六邊形轉換','情境五：\n動作速度'],
-    ['原始\n分數',str(data['Task1']), str(data['Task2']), str(data['Task3']),   str(data['Task4']),     str(data['Task5'])],
-    ['量尺\n分數',]
+    ['',         '情境一：\n視覺掃描',                 '情境二：\n圓形序列',              '情境三：\n六邊形序列',          '情境四：\n圓形六邊形轉換',     '情境五：\n動作速度'],
+    ['原始\n分數',str(data['Task1']),                 str(data['Task2']),               str(data['Task3']),            str(data['Task4']),            str(data['Task5'])],
+    ['量尺\n分數',f'{score2["Task1"]:.3f}',           f"{score2['Task2']:.3f}",         f"{score2['Task3']:.3f}",      f"{score2['Task4']:.3f}",      f"{score2['Task5']:.3f}"],
+    ['PR值',     prValue(data["Task1"], 20.5, 7.25),  prValue(data["Task2"], 29.5, 11),prValue(data["Task3"], 29, 10),prValue(data["Task4"], 69, 28), prValue(data["Task5"], 31, 16)]
     ]
+    for index, item in enumerate(tableList2):
+        for index2, item2 in enumerate(item):
+            table.cell(index,index2).text=item2
     '''
     hdr_cells1 = table.rows[0].cells
     hdr_cells1[1].text = '情境一：\n視覺掃描'
