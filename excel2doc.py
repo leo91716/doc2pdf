@@ -1,7 +1,7 @@
 from docx import Document
 from docx.shared import Inches
 from docx.oxml.ns import qn
-import xlrd, datetime
+import datetime
 from docx.shared import  Pt
 from docx.enum.style import WD_STYLE_TYPE
 import os
@@ -13,6 +13,7 @@ from tkinter.ttk import *
 from tkinter import messagebox
 from tkinter import filedialog
 import traceback
+import csv
 
 def callback_error(*args):
     # Build the error message
@@ -21,7 +22,6 @@ def callback_error(*args):
 
     # Also log the error to a file
     # TODO
-
     # Show the error to the user
     print(message)
 
@@ -60,16 +60,18 @@ def go(dest_folder, source_folder):
     for f in filelist:
         os.remove(os.path.join(dest_folder+'/pdf', f))
 
-    for file in glob.glob(source_folder+"\\*.xlsx"):
+    for file in glob.glob(source_folder+"\\*.csv"):
         #print('file',file)
         #print('source: ',source_folder)
         #file=os.path.basename(file)
-        reader=Reader(file)
-        writer=Writer()
-        excel2doc(reader,writer, file,dest_folder)
-        i+=1
-        pb["value"] = i
-        root.update()
+        with open(file,newline='') as csvfile:
+            rows = list(csv.reader(csvfile))
+            reader=Reader(rows)
+            writer=Writer()
+            excel2doc(reader,writer, file,dest_folder)
+            i+=1
+            pb["value"] = i
+            root.update()
 
         
     messagebox.showinfo(root,"成功將所有 Excel 輸出成 pdf")
@@ -113,13 +115,8 @@ class Writer():
 class Reader():
     source_folder=os.getcwd()
     #source_folder can only be used in Reader.source_folder and it cannot be used in any instance
-    def __init__(self, source):
-        book = xlrd.open_workbook(source)
-        #print('book', type(book))
-        self.book=book
-        sh = book.sheet_by_index(0)
-        self.sh=sh
-    
+    def __init__(self, rows):
+        self.rows=rows
 
 
     @staticmethod
@@ -129,27 +126,42 @@ class Reader():
         if not Reader.source_folder:
             Reader.source_folder =old_folder
         labelsource["text"] = '輸入資料夾:  '+Reader.source_folder
-        pb["maximum"] = len(glob.glob(Reader.source_folder+"\\*.xlsx"))
-
-    def getData(self, task,data={}, sh=None):
-        if sh==None:
-            sh=self.sh
-        for count in range(sh.nrows):
-            if sh.cell(count, 0).value==task:
-                while  True:
-                    if sh.cell(count, 1).value=='Complete_Time':
-                        data[task]=sh.cell(count, 2).value/1000
-                        return float(f'{sh.cell(count, 2).value/1000:.3f}')
+        pb["maximum"] = len(glob.glob(Reader.source_folder+"\\*.csv"))
+    
+    def getData(self, task):
+        rows=self.rows
+        i=0
+        while True:
+            if rows[i][0]==task:
+                i+=1
+                while rows[i][0]=='':
+                    if rows[i][1]=='Complete_Time':
+                        return float(f'{float(rows[i][2])/1000:.3f}')
                         break
-                    count+=1
-                
+                    i+=1
                 break
+            i+=1
 
-    def getBasicInfo(self, collect1, sh=None,book=None):
-        if sh==None:
-            sh=self.sh
-        if book==None:
-            book=self.book
+
+
+
+    def getBasicInfo(self, collect1,):
+        rows=self.rows
+        i=0
+        while True:
+            if rows[i][0]=='個人資料':
+                collect1[rows[i][1]]=rows[i][2]
+                i+=1
+                while rows[i][0]=='':
+                    if rows[i][1]=='DateOfBirth':
+                        collect1[rows[i][1]]=datetime.datetime(*map(int,rows[i][2].split('/')))
+                    else:
+                        collect1[rows[i][1]]=rows[i][2]
+                    i+=1
+                break
+            i+=1
+        collect1[rows[0][3]]=datetime.datetime.strptime(rows[1][3],'%Y/%m/%d-%H:%M:%S-%f')
+        '''
         for count in range(sh.nrows):
             if sh.cell(count, 0).value=='個人資料':
                 collect1[sh.cell(count, 1).value]=sh.cell(count, 2).value
@@ -164,6 +176,7 @@ class Reader():
 
         #print(collect1)
         collect1[sh.cell(0, 3).value]=datetime.datetime.strptime(sh.cell(1, 3).value,'%Y/%m/%d-%H:%M:%S-%f')
+        '''
 
 
 
@@ -191,6 +204,7 @@ def newScore(data, mean,std, new_mean, new_std):
 def excel2doc(reader,writer, file, destFolder):
     collect1=dict()
     reader.getBasicInfo(collect1)
+    print('collect1',collect1)
     writer.add_title('D-KEFS執行功能測驗回饋單')
 
     
@@ -200,7 +214,7 @@ def excel2doc(reader,writer, file, destFolder):
     tableList=[
     ['編號:',str(int(collect1['ID'])),                                    '性別:'  ,collect1['Gender'],       '測驗時間:',   str(collect1['CreatTime'].strftime("%Y/%m/%d"))  ],
     ['姓名:',collect1['Name'],                                            '慣用手:',collect1['HabitualHand'],  '出生年月日:', str(collect1['DateOfBirth'].strftime("%Y/%m/%d"))],
-    ['年齡:',str(collect1['CreatTime'].year-collect1['DateOfBirth'].year),'教育年:',str(int(collect1['HighestLevelOfEducation'])), '學校:']
+    ['年齡:',str(collect1['CreatTime'].year-collect1['DateOfBirth'].year),'教育年:',collect1['HighestLevelOfEducation'], '學校:']
     ]
     writer.add_table([3,6],tableList)
     writer.add_paragraph('')
@@ -307,7 +321,7 @@ try:
     labeldest["text"] = '輸出資料夾:  '+dest_folder
     labelsource['text']='讀取資料夾   '+Reader.source_folder
     
-    pb["maximum"] = len(glob.glob(Reader.source_folder+"\\*.xlsx"))
+    pb["maximum"] = len(glob.glob(Reader.source_folder+"\\*.csv"))
     #glob.glob('*/*.csv')
     pb["value"] = 0
     
