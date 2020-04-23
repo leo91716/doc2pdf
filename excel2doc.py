@@ -65,7 +65,8 @@ def go(dest_folder, source_folder):
         #print('source: ',source_folder)
         #file=os.path.basename(file)
         reader=Reader(file)
-        excel2doc(reader, file,dest_folder)
+        writer=Writer()
+        excel2doc(reader,writer, file,dest_folder)
         i+=1
         pb["value"] = i
         root.update()
@@ -75,7 +76,37 @@ def go(dest_folder, source_folder):
     root.destroy()
 
 
+class Writer():
+    def __init__(self):
+        self.doc = Document()
+        self.doc.styles['Normal'].font.name = u'標楷體'
+        self.doc.styles['Normal']._element.rPr.rFonts.set(qn('w:eastAsia'), u'標楷體')
+        self.doc.styles['Normal'].font.bold=True
+        self.doc.styles['Normal'].font.size=Pt(12)
+        styles = self.doc.styles
+        new_heading_style = styles.add_style('New Heading', WD_STYLE_TYPE.PARAGRAPH)
 
+        font = new_heading_style.font
+        font.bold=True
+        font.name = u'標楷體'
+        font.size = Pt(16)
+
+        new_heading_style._element.rPr.rFonts.set(qn('w:eastAsia'), u'標楷體')
+
+    def add_title(self,title):
+        paragraph = self.doc.add_paragraph(title, style='New Heading')
+        paragraph.alignment = 1
+
+    def add_paragraph(self,context):
+        self.doc.add_paragraph(context)
+    def add_table(self,size,context):
+        table = self.doc.add_table(rows = size[0], cols = size[1], style='TableGrid')
+        for index, item in enumerate(context):
+            for index2, item2 in enumerate(item):
+                table.cell(index,index2).text=str(item2)
+    
+    def save(self,path):
+        self.doc.save(path)
 
 
 
@@ -100,7 +131,7 @@ class Reader():
         labelsource["text"] = '輸入資料夾:  '+Reader.source_folder
         pb["maximum"] = len(glob.glob(Reader.source_folder+"\\*.xlsx"))
 
-    def getData(self, data, task, sh=None):
+    def getData(self, task,data={}, sh=None):
         if sh==None:
             sh=self.sh
         for count in range(sh.nrows):
@@ -108,6 +139,7 @@ class Reader():
                 while  True:
                     if sh.cell(count, 1).value=='Complete_Time':
                         data[task]=sh.cell(count, 2).value/1000
+                        return float(f'{sh.cell(count, 2).value/1000:.3f}')
                         break
                     count+=1
                 
@@ -152,261 +184,55 @@ def prValue(data,mean,std, norm=norm):
 
 
 def newScore(data, mean,std, new_mean, new_std):
-    return (data-mean)/std*new_std+new_mean
+    return float(f'{(data-mean)/std*new_std+new_mean:.3f}')
 
 
 
-def excel2doc(reader, file, destFolder):
-    #print(datetime.datetime.strptime(sh.cell(1, 3).value,'%Y/%m/%d-%H:%M:%S-%f'))
-    #print(datetime.datetime.strptime(sh.cell(14, 3).value,'%Y/%m/%d-%H:%M:%S-%f'))
-    #print(deltaSecond(datetime.datetime.strptime(sh.cell(1, 3).value,'%Y/%m/%d-%H:%M:%S-%f'),datetime.datetime.strptime(sh.cell(14, 3).value,'%Y/%m/%d-%H:%M:%S-%f')))
+def excel2doc(reader,writer, file, destFolder):
     collect1=dict()
     reader.getBasicInfo(collect1)
-    #print('xlsx', datetime.datetime(*tuple(map(lambda x: int(x.lstrip('0')),sh.cell(1, 3).value.split('-')[0].split('/')))))
-    #print(collect1[sh.cell(0, 3).value])
+    writer.add_title('D-KEFS執行功能測驗回饋單')
 
-    doc = Document()
-
-    doc.styles['Normal'].font.name = u'標楷體'
-    doc.styles['Normal']._element.rPr.rFonts.set(qn('w:eastAsia'), u'標楷體')
-    doc.styles['Normal'].font.bold=True
-    doc.styles['Normal'].font.size=Pt(12)
-
-    ###############解決原生bug####################
-    styles = doc.styles
-    new_heading_style = styles.add_style('New Heading', WD_STYLE_TYPE.PARAGRAPH)
-    #new_heading_style.base_style = styles['Heading 1']
-
-    font = new_heading_style.font
-    font.bold=True
-    font.name = u'標楷體'
-    font.size = Pt(16)
-
-    new_heading_style._element.rPr.rFonts.set(qn('w:eastAsia'), u'標楷體')
-
-
-    #print(isinstance(doc.styles['Heading 1'],p))
-    #print(type(new_heading_style))
-    #print(dir(new_heading_style.element))
-    #doc.add_heading('D-KEFS執行功能測驗回饋單')
-    #doc.add_heading('別師', level=1)
-    paragraph = doc.add_paragraph('D-KEFS執行功能測驗回饋單', style='New Heading')
-    paragraph.alignment = 1
-
-    doc.add_paragraph('基本資料:')
-
-
-    table = doc.add_table(rows = 3, cols = 6, style='TableGrid') 
+    
+    
+    writer.add_paragraph('基本資料:')
+    ##table1
     tableList=[
     ['編號:',str(int(collect1['ID'])),                                    '性別:'  ,collect1['Gender'],       '測驗時間:',   str(collect1['CreatTime'].strftime("%Y/%m/%d"))  ],
     ['姓名:',collect1['Name'],                                            '慣用手:',collect1['HabitualHand'],  '出生年月日:', str(collect1['DateOfBirth'].strftime("%Y/%m/%d"))],
     ['年齡:',str(collect1['CreatTime'].year-collect1['DateOfBirth'].year),'教育年:',str(int(collect1['HighestLevelOfEducation'])), '學校:']
     ]
+    writer.add_table([3,6],tableList)
+    writer.add_paragraph('')
+    writer.add_title('軌跡標示測驗')
+    writer.add_paragraph('基本測量:')
 
 
+    ##table2
+    i1=['',         '情境一：\n視覺掃描',                                '情境二：\n圓形序列',              '情境三：\n六邊形序列',          '情境四：\n圓形六邊形轉換',     '情境五：\n動作速度']
+    i2=['原始\n分數',reader.getData('Task1'),                           reader.getData('Task2'),          reader.getData('Task3'),        reader.getData('Task4'),       reader.getData('Task5')]
+    print(i2)
+    i3=['量尺\n分數',newScore(i2[1], 20.5, 7.25, 10, 3),newScore(i2[2], 29.5, 11, 10, 3), newScore(i2[3], 29, 10, 10, 3),newScore(i2[4], 69, 28, 10, 3),newScore(i2[5], 31, 16, 10, 3)]
+    i4=['PR值',     prValue(i2[1], 20.5, 7.25),                 prValue(i2[2], 29.5, 11),prValue(i2[3], 29, 10),prValue(i2[4], 69, 28), prValue(i2[5], 31, 16)]
+    tableList2=[i1,i2,i3,i4]
+    writer.add_table([4,6],tableList2)
 
 
-    for index, item in enumerate(tableList):
-        for index2, item2 in enumerate(item):
-            table.cell(index,index2).text=item2
+    ##table3
+    table2=tableList2[2]
+    i1=['',         '圓形序列＋六邊形序列',            '圓形六邊形轉換 - 視覺掃描',    '圓形六邊形轉換 - 圓形序列','圓形六邊形轉換 - 六邊形序列','圓形六邊形轉換- 圓形序列＋六邊形序列','圓形六邊形轉換 - 動作速度']
+    i2=['計分\n結果',float(f'{table2[2]+table2[3]:.3}'),   float(f'{table2[1]-table2[2]:.3}'),        float(f'{table2[4]-table2[2]:.3}'),      float(f'{table2[4]-table2[3]:.3}'),       float(f'{table2[4]-table2[2]+table2[3]:.3}'),                float(f'{table2[4]-table2[5]:.3}')]
+    i3=['量尺\n分數',newScore(i2[1], 19.5, 5.25, 10, 3), newScore(i2[2], 0, 3.75, 10, 3),newScore(i2[3], 0, 3, 10, 3), newScore(i2[4], 0, 3, 10, 3),    newScore(i2[5], 0, 3, 10, 3),  newScore(i2[6], 0, 3, 10, 3)]
+    i4=['PR值',      prValue(i2[1], 19.5, 5.25),prValue(i2[2], 0, 3.75),prValue(i2[3], 0, 3), prValue(i2[4], 0, 3),  prValue(i2[5], 0, 3),           prValue(i2[6], 0, 3)]
+    tableList3=[i1,i2,i3,i4]
+    writer.add_paragraph('')
+    writer.add_paragraph('衍生測量:')
 
-    '''
-    hdr_cells1 = table.rows[0].cells
-    hdr_cells1[0].text = '編號:'
-    hdr_cells1[1].text = str(int(collect1['ID']))
-    hdr_cells1[2].text = '性別:'
-    hdr_cells1[3].text = collect1['Gender']
-    hdr_cells1[4].text = '測驗時間:'
-    hdr_cells1[5].text = str(collect1['CreatTime'].strftime("%Y/%m/%d"))
-
-    hdr_cells2 = table.rows[1].cells
-    hdr_cells2[0].text = '姓名:'
-    hdr_cells2[1].text = collect1['Name']
-    hdr_cells2[2].text = '慣用手:'
-    hdr_cells2[3].text = collect1['HabitualHand']
-    hdr_cells2[4].text = '出生年月日:'
-    hdr_cells2[5].text = str(collect1['DateOfBirth'].strftime("%Y/%m/%d"))
-
-    hdr_cells3 = table.rows[2].cells
-    hdr_cells3[0].text = '年齡:'
-    hdr_cells3[1].text = str(collect1['CreatTime'].year-collect1['DateOfBirth'].year)
-    hdr_cells3[2].text = '教育年:'
-    hdr_cells3[3].text = str(int(collect1['HighestLevelOfEducation']))
-    hdr_cells3[4].text = '學校:'
-    '''
-
-
-
-
-    doc.add_paragraph('')
-    paragraph = doc.add_paragraph('軌跡標示測驗', style='New Heading')
-    paragraph.alignment = 1
-    doc.add_paragraph('基本測量:')
-    table = doc.add_table(rows = 4, cols = 6, style='TableGrid') 
-
-    data={}
-    reader.getData(data,'Task1')
-    reader.getData( data,'Task2')
-    reader.getData( data,'Task3')
-    reader.getData( data,'Task4')
-    reader.getData( data,'Task5')
-
-
-    score2={}
-    score2["Task1"]=newScore(data["Task1"], 20.5, 7.25, 10, 3)
-   
-    score2['Task2']=newScore(data['Task2'], 29.5, 11, 10, 3)
-
-    score2['Task3']=newScore(data['Task3'], 29, 10, 10, 3)
-
-    score2['Task4']=newScore(data['Task4'], 69, 28, 10, 3)
-
-    score2['Task5']=newScore(data['Task5'], 31, 16, 10, 3)
-
-    tableList2=[
-    ['',         '情境一：\n視覺掃描',                 '情境二：\n圓形序列',              '情境三：\n六邊形序列',          '情境四：\n圓形六邊形轉換',     '情境五：\n動作速度'],
-    ['原始\n分數',str(data['Task1']),                 str(data['Task2']),               str(data['Task3']),            str(data['Task4']),            str(data['Task5'])],
-    ['量尺\n分數',f'{score2["Task1"]:.3f}',           f"{score2['Task2']:.3f}",         f"{score2['Task3']:.3f}",      f"{score2['Task4']:.3f}",      f"{score2['Task5']:.3f}"],
-    ['PR值',     prValue(data["Task1"], 20.5, 7.25),  prValue(data["Task2"], 29.5, 11),prValue(data["Task3"], 29, 10),prValue(data["Task4"], 69, 28), prValue(data["Task5"], 31, 16)]
-    ]
-    for index, item in enumerate(tableList2):
-        for index2, item2 in enumerate(item):
-            table.cell(index,index2).text=item2
-    '''
-    hdr_cells1 = table.rows[0].cells
-    hdr_cells1[1].text = '情境一：\n視覺掃描'
-    hdr_cells1[2].text = '情境二：\n圓形序列'
-    hdr_cells1[3].text = '情境三：\n六邊形序列'
-    hdr_cells1[4].text = '情境四：\n圓形六邊形轉換'
-    hdr_cells1[5].text = '情境五：\n動作速度'
-
-    data={}
-    reader.getData(data,'Task1')
-    reader.getData( data,'Task2')
-    reader.getData( data,'Task3')
-    reader.getData( data,'Task4')
-    reader.getData( data,'Task5')
-    print('data', data)
-
-
-
-
-
-
-
-
-
-
-    hdr_cells2=table.rows[1].cells
-    hdr_cells2[0].text = '原始\n分數'
-    hdr_cells2[1].text = str(data['Task1'])
-    hdr_cells2[2].text = str(data['Task2'])
-    hdr_cells2[3].text = str(data['Task3'])
-    hdr_cells2[4].text = str(data['Task4'])
-    hdr_cells2[5].text = str(data['Task5'])
-
-
-    hdr_cells3=table.rows[2].cells
-    hdr_cells3[0].text = '量尺\n分數'
-    score2={}
-    score2["Task1"]=newScore(data["Task1"], 20.5, 7.25, 10, 3)
-    hdr_cells3[1].text =f'{score2["Task1"]:.3f}'
-    score2['Task2']=newScore(data['Task2'], 29.5, 11, 10, 3)
-    hdr_cells3[2].text =f"{score2['Task2']:.3f}"
-    score2['Task3']=newScore(data['Task3'], 29, 10, 10, 3)
-    hdr_cells3[3].text =f"{score2['Task3']:.3f}"
-    score2['Task4']=newScore(data['Task4'], 69, 28, 10, 3)
-    hdr_cells3[4].text =f"{score2['Task4']:.3f}"
-    score2['Task5']=newScore(data['Task5'], 31, 16, 10, 3)
-    hdr_cells3[5].text =f"{score2['Task5']:.3f}"
-
-
-
-    hdr_cells4=table.rows[3].cells
-    hdr_cells4[0].text = 'PR值'
-    hdr_cells4[1].text =prValue(data["Task1"], 20.5, 7.25)
-    hdr_cells4[2].text =prValue(data["Task2"], 29.5, 11)
-    hdr_cells4[3].text =prValue(data["Task3"], 29, 10)
-    hdr_cells4[4].text =prValue(data["Task4"], 69, 28)
-    hdr_cells4[5].text =prValue(data["Task5"], 31, 16)
-    '''
-
+    writer.add_table([4,7],tableList3)
     
-
-
-
-    combine={}
-    i=0
-    i+=1
-    combine[i]=score2['Task2']+score2['Task3']
-    
-    i+=1
-    combine[i]=score2['Task1']-score2['Task2']
-    i+=1
-    combine[i]=score2['Task4']-score2['Task2']
-    i+=1
-    combine[i]=score2['Task4']-score2['Task3']
-    i+=1
-    combine[i]=score2['Task4']-score2['Task2']+score2['Task3']
-    i+=1
-    combine[i]=score2['Task4']-score2['Task5']
-
-
-
-
-    new_combine={}
-    hdr_cells3 = table.rows[2].cells
-    i=0
-    i+=1
-    new_combine[i]=newScore(combine[i], 19.5, 5.25, 10, 3)
-    i+=1
-    new_combine[i]=newScore(combine[i], 0, 3.75, 10, 3)
-    i+=1
-    new_combine[i]=newScore(combine[i], 0, 3, 10, 3)
-    i+=1
-    new_combine[i]=newScore(combine[i], 0, 3, 10, 3)
-    i+=1
-    new_combine[i]=newScore(combine[i], 0, 3, 10, 3)
-    i+=1
-    new_combine[i]=newScore(combine[i], 0, 3, 10, 3)
-
-
-
-    '''
-    i=0
-    hdr_cells4[i].text = 'PR值'
-    i+=1
-    hdr_cells4[i].text = prValue(combine[i], 19.5, 5.25)
-    i+=1
-    hdr_cells4[i].text = prValue(combine[i], 0, 3.75)
-    i+=1
-    hdr_cells4[i].text = prValue(combine[i], 0, 3)
-    i+=1
-    hdr_cells4[i].text = prValue(combine[i], 0, 3)
-    i+=1
-    hdr_cells4[i].text = prValue(combine[i], 0, 3)
-    i+=1
-    hdr_cells4[i].text = prValue(combine[i], 0, 3)
-    '''
-    doc.add_paragraph('')
-    doc.add_paragraph('衍生測量:')
-    table = doc.add_table(rows = 4, cols = 7, style='TableGrid')
-    tableList3=[
-    ['',         '圓形序列＋六邊形序列',            '圓形六邊形轉換 - 視覺掃描',    '圓形六邊形轉換 - 圓形序列','圓形六邊形轉換 - 六邊形序列','圓形六邊形轉換- 圓形序列＋六邊形序列','圓形六邊形轉換 - 動作速度'],
-    ['計分\n結果',f"{combine[1]:.3f}",             f"{combine[2]:.3f}",         f"{combine[3]:.3f}",       f"{combine[4]:.3f}",       f"{combine[5]:.3f}",                f"{combine[6]:.3f}"],
-    ['量尺\n分數',f'{new_combine[1]:.3f}',         f'{new_combine[2]:.3f}',     f'{new_combine[3]:.3f}',   f'{new_combine[4]:.3f}',    f'{new_combine[5]:.3f}',            f'{new_combine[6]:.3f}'],
-    ['PR值',      prValue(combine[1], 19.5, 5.25),prValue(combine[2], 0, 3.75),prValue(combine[3], 0, 3), prValue(combine[4], 0, 3),  prValue(combine[5], 0, 3),           prValue(combine[6], 0, 3)]
-    ]
-    for index, item in enumerate(tableList3):
-        for index2, item2 in enumerate(item):
-            table.cell(index,index2).text=item2
-
-    
-
-
-    doc.add_paragraph('')
-    doc.add_paragraph('選擇性測量：錯誤分析')
-    table = doc.add_table(rows = 7, cols = 6, style='TableGrid') 
+    writer.add_paragraph('')
+    writer.add_paragraph('選擇性測量：錯誤分析')
+    ##table4
     tableList4=[
     ['',        '情境一：\n視覺掃描','情境二：\n圓形序列','情境三：\n六邊形序列','情境四：\n圓形六邊形轉換','情境五：\n動作速度'],
     ['疏忽錯誤'],
@@ -416,39 +242,24 @@ def excel2doc(reader, file, destFolder):
     ['時間中止錯誤'],
     ['錯誤總數']
     ]
-    for index, item in enumerate(tableList4):
-        for index2, item2 in enumerate(item):
-            table.cell(index,index2).text=item2
-
-    doc.add_paragraph('*原始分數/累積百分位數')
-    doc.add_paragraph('')
-    doc.add_paragraph('說明:')
+    writer.add_table([7,6],tableList4)
+    writer.add_paragraph('*原始分數/累積百分位數')
+    writer.add_paragraph('')
+    writer.add_paragraph('說明:')
+    
 
     #print(sh.nrows)
     #print(dir(doc.styles['Normal'].font))
     
     file=os.path.basename(file)
     file=file.split('.')[0]
-    
-
-    doc.save(destFolder+'/word/'+file+'.docx')
-
-
-    
+    writer.save(destFolder+'/word/'+file+'.docx')
     #doc to pdf
     wdFormatPDF = 17
-
     in_file = destFolder+'/word/'+file+'.docx'
     out_file = destFolder+'/pdf/'+file+'.pdf'
-
-    
-
-    
-
-    print('infile',in_file)
-    print('outfile',out_file)
-
-
+    #print('infile',in_file)
+    #print('outfile',out_file)
     word = comtypes.client.CreateObject('Word.Application')
     doc = word.Documents.Open(in_file)
     doc.SaveAs(out_file, FileFormat=wdFormatPDF)
@@ -456,15 +267,6 @@ def excel2doc(reader, file, destFolder):
     word.Quit()
     
 
-'''  
-if not os.path.exists('word'):
-        os.makedirs('word')
-if not os.path.exists('pdf'):
-    os.makedirs('pdf')
-for file in glob.glob("*.xlsx"):
-    reader=Reader(file)
-    excel2doc(reader, file)
-'''
 
 
 
@@ -509,19 +311,6 @@ try:
     #glob.glob('*/*.csv')
     pb["value"] = 0
     
-    
-    '''
-    for file in glob.glob("*.xlsx"):
-        reader=Reader(file)
-        excel2doc(reader, file,folder_selected)
-        i+=1
-        pb["value"] = i
-        root.update()
-
-        
-    messagebox.showinfo(root,"成功將所有 Excel 輸出成 pdf")
-    root.destroy()
-    '''
     root.mainloop()
 except Exception as e:
     print('錯誤!!!!')
