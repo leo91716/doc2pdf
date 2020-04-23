@@ -335,74 +335,44 @@ def excel2doc(reader, file, destFolder):
 
 
 
-
-    doc.add_paragraph('')
-    doc.add_paragraph('衍生測量:')
-    table = doc.add_table(rows = 4, cols = 7, style='TableGrid')
-    hdr_cells1 = table.rows[0].cells
-    hdr_cells1[1].text = '圓形序列＋六邊形序列'
-    hdr_cells1[2].text = '圓形六邊形轉換 - 視覺掃描'
-    hdr_cells1[3].text = '圓形六邊形轉換 - 圓形序列'
-    hdr_cells1[4].text = '圓形六邊形轉換 - 六邊形序列'
-    hdr_cells1[5].text = '圓形六邊形轉換- 圓形序列＋六邊形序列'
-    hdr_cells1[6].text = '圓形六邊形轉換 - 動作速度'
-
-
-
     combine={}
-    hdr_cells2 = table.rows[1].cells
     i=0
-    hdr_cells2[i].text = '計分\n結果'
     i+=1
     combine[i]=score2['Task2']+score2['Task3']
-    hdr_cells2[i].text = f"{combine[i]:.3f}"
+    
     i+=1
     combine[i]=score2['Task1']-score2['Task2']
-    hdr_cells2[i].text = f"{combine[i]:.3f}"
     i+=1
     combine[i]=score2['Task4']-score2['Task2']
-    hdr_cells2[i].text = f"{combine[i]:.3f}"
     i+=1
     combine[i]=score2['Task4']-score2['Task3']
-    hdr_cells2[i].text = f"{combine[i]:.3f}"
     i+=1
     combine[i]=score2['Task4']-score2['Task2']+score2['Task3']
-    hdr_cells2[i].text = f"{combine[i]:.3f}"
     i+=1
     combine[i]=score2['Task4']-score2['Task5']
-    hdr_cells2[i].text = f"{combine[i]:.3f}"
-    
+
 
 
 
     new_combine={}
     hdr_cells3 = table.rows[2].cells
     i=0
-    hdr_cells3[i].text = '量尺\n分數'
     i+=1
     new_combine[i]=newScore(combine[i], 19.5, 5.25, 10, 3)
-    hdr_cells3[i].text = f'{new_combine[i]:.3f}'
     i+=1
     new_combine[i]=newScore(combine[i], 0, 3.75, 10, 3)
-    hdr_cells3[i].text = f'{new_combine[i]:.3f}'
     i+=1
     new_combine[i]=newScore(combine[i], 0, 3, 10, 3)
-    hdr_cells3[i].text = f'{new_combine[i]:.3f}'
     i+=1
     new_combine[i]=newScore(combine[i], 0, 3, 10, 3)
-    hdr_cells3[i].text = f'{new_combine[i]:.3f}'
     i+=1
     new_combine[i]=newScore(combine[i], 0, 3, 10, 3)
-    hdr_cells3[i].text = f'{new_combine[i]:.3f}'
     i+=1
     new_combine[i]=newScore(combine[i], 0, 3, 10, 3)
-    hdr_cells3[i].text = f'{new_combine[i]:.3f}'
-
-    #print('new combine: ', new_combine)
 
 
 
-    hdr_cells4 = table.rows[3].cells
+    '''
     i=0
     hdr_cells4[i].text = 'PR值'
     i+=1
@@ -417,25 +387,39 @@ def excel2doc(reader, file, destFolder):
     hdr_cells4[i].text = prValue(combine[i], 0, 3)
     i+=1
     hdr_cells4[i].text = prValue(combine[i], 0, 3)
+    '''
+    doc.add_paragraph('')
+    doc.add_paragraph('衍生測量:')
+    table = doc.add_table(rows = 4, cols = 7, style='TableGrid')
+    tableList3=[
+    ['',         '圓形序列＋六邊形序列',            '圓形六邊形轉換 - 視覺掃描',    '圓形六邊形轉換 - 圓形序列','圓形六邊形轉換 - 六邊形序列','圓形六邊形轉換- 圓形序列＋六邊形序列','圓形六邊形轉換 - 動作速度'],
+    ['計分\n結果',f"{combine[1]:.3f}",             f"{combine[2]:.3f}",         f"{combine[3]:.3f}",       f"{combine[4]:.3f}",       f"{combine[5]:.3f}",                f"{combine[6]:.3f}"],
+    ['量尺\n分數',f'{new_combine[1]:.3f}',         f'{new_combine[2]:.3f}',     f'{new_combine[3]:.3f}',   f'{new_combine[4]:.3f}',    f'{new_combine[5]:.3f}',            f'{new_combine[6]:.3f}'],
+    ['PR值',      prValue(combine[1], 19.5, 5.25),prValue(combine[2], 0, 3.75),prValue(combine[3], 0, 3), prValue(combine[4], 0, 3),  prValue(combine[5], 0, 3),           prValue(combine[6], 0, 3)]
+    ]
+    for index, item in enumerate(tableList3):
+        for index2, item2 in enumerate(item):
+            table.cell(index,index2).text=item2
+
     
 
 
     doc.add_paragraph('')
     doc.add_paragraph('選擇性測量：錯誤分析')
     table = doc.add_table(rows = 7, cols = 6, style='TableGrid') 
-    hdr_cells1 = table.rows[0].cells
-    hdr_cells1[1].text = '情境一：\n視覺掃描'
-    hdr_cells1[2].text = '情境二：\n圓形序列'
-    hdr_cells1[3].text = '情境三：\n六邊形序列'
-    hdr_cells1[4].text = '情境四：\n圓形六邊形轉換'
-    hdr_cells1[5].text = '情境五：\n動作速度'
+    tableList4=[
+    ['',        '情境一：\n視覺掃描','情境二：\n圓形序列','情境三：\n六邊形序列','情境四：\n圓形六邊形轉換','情境五：\n動作速度'],
+    ['疏忽錯誤'],
+    ['任務錯誤'],
+    ['序列錯誤'],
+    ['不正確反應錯誤'],
+    ['時間中止錯誤'],
+    ['錯誤總數']
+    ]
+    for index, item in enumerate(tableList4):
+        for index2, item2 in enumerate(item):
+            table.cell(index,index2).text=item2
 
-    table.rows[1].cells[0].text = '疏忽錯誤'
-    table.rows[2].cells[0].text = '任務錯誤'
-    table.rows[3].cells[0].text = '序列錯誤'
-    table.rows[4].cells[0].text = '不正確反應錯誤'
-    table.rows[5].cells[0].text = '時間中止錯誤'
-    table.rows[6].cells[0].text = '錯誤總數'
     doc.add_paragraph('*原始分數/累積百分位數')
     doc.add_paragraph('')
     doc.add_paragraph('說明:')
