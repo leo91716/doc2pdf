@@ -19,10 +19,6 @@ def callback_error(*args):
     # Build the error message
     message = 'Generic error:\n\n'
     message += traceback.format_exc()
-
-    # Also log the error to a file
-    # TODO
-    # Show the error to the user
     print(message)
 
     # Exit the program immediately
@@ -44,12 +40,6 @@ def chooseDest():
 
 def go(dest_folder, source_folder):
     i=0
-    '''
-    if not os.path.exists('word'):
-        os.makedirs('word')
-    if not os.path.exists('pdf'):
-        os.makedirs('pdf')
-    '''
     if not os.path.isdir(dest_folder+'/word'):
         os.makedirs(dest_folder+'/word')
     if not os.path.isdir(dest_folder+'/pdf'):
@@ -61,14 +51,11 @@ def go(dest_folder, source_folder):
         os.remove(os.path.join(dest_folder+'/pdf', f))
 
     for file in glob.glob(source_folder+"\\*.csv"):
-        #print('file',file)
-        #print('source: ',source_folder)
-        #file=os.path.basename(file)
         with open(file,newline='') as csvfile:
             rows = list(csv.reader(csvfile))
-            reader=Reader(rows)
-            writer=Writer()
-            excel2doc(reader,writer, file,dest_folder)
+            reader=Reader_Track(rows)
+            writer=Writer_Fluent(reader)
+            excel2doc(writer, file,dest_folder)
             i+=1
             pb["value"] = i
             root.update()
@@ -78,8 +65,9 @@ def go(dest_folder, source_folder):
     root.destroy()
 
 
-class Writer():
-    def __init__(self):
+class Writer_Track():
+    def __init__(self,reader):
+        self.reader=reader
         self.doc = Document()
         self.doc.styles['Normal'].font.name = u'標楷體'
         self.doc.styles['Normal']._element.rPr.rFonts.set(qn('w:eastAsia'), u'標楷體')
@@ -110,9 +98,65 @@ class Writer():
     def save(self,path):
         self.doc.save(path)
 
+    def getBasicInfo(self):
+        collect1=dict()
+        self.reader.getBasicInfo(collect1)
+        print('collect1',collect1)
+        self.add_title('D-KEFS執行功能測驗回饋單')
+        self.add_paragraph('基本資料:')
+        tableList=[
+        ['編號:',str(int(collect1['ID'])),                                    '性別:'  ,collect1['Gender'],       '測驗時間:',   str(collect1['CreatTime'].strftime("%Y/%m/%d"))  ],
+        ['姓名:',collect1['Name'],                                            '慣用手:',collect1['HabitualHand'],  '出生年月日:', str(collect1['DateOfBirth'].strftime("%Y/%m/%d"))],
+        ['年齡:',str(collect1['CreatTime'].year-collect1['DateOfBirth'].year),'教育年:',collect1['HighestLevelOfEducation'], '學校:']
+        ]
+        self.add_table([3,6],tableList)
+        
+
+    def getBasicMeasure(self):
+        self.add_paragraph('')
+        self.add_title('軌跡標示測驗')
+        self.add_paragraph('基本測量:')
+        reader=self.reader
+        i1=['',         '情境一：\n視覺掃描',                                '情境二：\n圓形序列',              '情境三：\n六邊形序列',          '情境四：\n圓形六邊形轉換',     '情境五：\n動作速度']
+        i2=['原始\n分數',reader.getData('Task1'),                           reader.getData('Task2'),          reader.getData('Task3'),        reader.getData('Task4'),       reader.getData('Task5')]
+        print(i2)
+        i3=['量尺\n分數',newScore(i2[1], 20.5, 7.25, 10, 3),newScore(i2[2], 29.5, 11, 10, 3), newScore(i2[3], 29, 10, 10, 3),newScore(i2[4], 69, 28, 10, 3),newScore(i2[5], 31, 16, 10, 3)]
+        i4=['PR值',     prValue(i2[1], 20.5, 7.25),                 prValue(i2[2], 29.5, 11),prValue(i2[3], 29, 10),prValue(i2[4], 69, 28), prValue(i2[5], 31, 16)]
+        self.tableList2=[i1,i2,i3,i4]
+        self.add_table([4,6],self.tableList2)
+
+    def getMoreMeasure(self):
+        ##table3
+        table2=self.tableList2[2]
+        i1=['',         '圓形序列＋六邊形序列',            '圓形六邊形轉換 - 視覺掃描',    '圓形六邊形轉換 - 圓形序列','圓形六邊形轉換 - 六邊形序列','圓形六邊形轉換- 圓形序列＋六邊形序列','圓形六邊形轉換 - 動作速度']
+        i2=['計分\n結果',float(f'{table2[2]+table2[3]:.3}'),   float(f'{table2[1]-table2[2]:.3}'),        float(f'{table2[4]-table2[2]:.3}'),      float(f'{table2[4]-table2[3]:.3}'),       float(f'{table2[4]-table2[2]+table2[3]:.3}'),                float(f'{table2[4]-table2[5]:.3}')]
+        i3=['量尺\n分數',newScore(i2[1], 19.5, 5.25, 10, 3), newScore(i2[2], 0, 3.75, 10, 3),newScore(i2[3], 0, 3, 10, 3), newScore(i2[4], 0, 3, 10, 3),    newScore(i2[5], 0, 3, 10, 3),  newScore(i2[6], 0, 3, 10, 3)]
+        i4=['PR值',      prValue(i2[1], 19.5, 5.25),prValue(i2[2], 0, 3.75),prValue(i2[3], 0, 3), prValue(i2[4], 0, 3),  prValue(i2[5], 0, 3),           prValue(i2[6], 0, 3)]
+        tableList3=[i1,i2,i3,i4]
+        self.add_paragraph('')
+        self.add_paragraph('衍生測量:')
+        self.add_table([4,7],tableList3)
+
+    def getErrorTable(self):
+        self.add_paragraph('')
+        self.add_paragraph('選擇性測量：錯誤分析')
+        ##table4
+        tableList4=[
+        ['',        '情境一：\n視覺掃描','情境二：\n圓形序列','情境三：\n六邊形序列','情境四：\n圓形六邊形轉換','情境五：\n動作速度'],
+        ['疏忽錯誤'],
+        ['任務錯誤'],
+        ['序列錯誤'],
+        ['不正確反應錯誤'],
+        ['時間中止錯誤'],
+        ['錯誤總數']
+        ]
+        self.add_table([7,6],tableList4)
+        self.add_paragraph('*原始分數/累積百分位數')
+class Writer_Fluent(Writer_Track):
+    pass
 
 
-class Reader():
+class Reader_Track():
     source_folder=os.getcwd()
     #source_folder can only be used in Reader.source_folder and it cannot be used in any instance
     def __init__(self, rows):
@@ -131,7 +175,7 @@ class Reader():
     def getData(self, task):
         rows=self.rows
         i=0
-        while True:
+        while i<len(rows):
             if rows[i][0]==task:
                 i+=1
                 while rows[i][0]=='':
@@ -145,7 +189,7 @@ class Reader():
 
 
 
-    def getBasicInfo(self, collect1,):
+    def getBasicInfo(self, collect1):
         rows=self.rows
         i=0
         while True:
@@ -161,23 +205,6 @@ class Reader():
                 break
             i+=1
         collect1[rows[0][3]]=datetime.datetime.strptime(rows[1][3],'%Y/%m/%d-%H:%M:%S-%f')
-        '''
-        for count in range(sh.nrows):
-            if sh.cell(count, 0).value=='個人資料':
-                collect1[sh.cell(count, 1).value]=sh.cell(count, 2).value
-                count+=1
-                while  sh.cell(count, 0).value=='':
-                    if sh.cell(count, 1).value=='DateOfBirth':
-                        collect1[sh.cell(count, 1).value]=datetime.datetime(*xlrd.xldate_as_tuple(sh.cell(count, 2).value, book.datemode))
-                    else:
-                        collect1[sh.cell(count, 1).value]=sh.cell(count, 2).value
-                    count+=1
-                break
-
-        #print(collect1)
-        collect1[sh.cell(0, 3).value]=datetime.datetime.strptime(sh.cell(1, 3).value,'%Y/%m/%d-%H:%M:%S-%f')
-        '''
-
 
 
 
@@ -189,75 +216,17 @@ def prValue(data,mean,std, norm=norm):
         return str(int(norm.cdf(data,mean,std)*100))
 
 
-
-
-
-
-
-
-
 def newScore(data, mean,std, new_mean, new_std):
     return float(f'{(data-mean)/std*new_std+new_mean:.3f}')
 
 
 
-def excel2doc(reader,writer, file, destFolder):
-    collect1=dict()
-    reader.getBasicInfo(collect1)
-    print('collect1',collect1)
-    writer.add_title('D-KEFS執行功能測驗回饋單')
-
+def excel2doc(writer, file, destFolder):
     
-    
-    writer.add_paragraph('基本資料:')
-    ##table1
-    tableList=[
-    ['編號:',str(int(collect1['ID'])),                                    '性別:'  ,collect1['Gender'],       '測驗時間:',   str(collect1['CreatTime'].strftime("%Y/%m/%d"))  ],
-    ['姓名:',collect1['Name'],                                            '慣用手:',collect1['HabitualHand'],  '出生年月日:', str(collect1['DateOfBirth'].strftime("%Y/%m/%d"))],
-    ['年齡:',str(collect1['CreatTime'].year-collect1['DateOfBirth'].year),'教育年:',collect1['HighestLevelOfEducation'], '學校:']
-    ]
-    writer.add_table([3,6],tableList)
-    writer.add_paragraph('')
-    writer.add_title('軌跡標示測驗')
-    writer.add_paragraph('基本測量:')
-
-
-    ##table2
-    i1=['',         '情境一：\n視覺掃描',                                '情境二：\n圓形序列',              '情境三：\n六邊形序列',          '情境四：\n圓形六邊形轉換',     '情境五：\n動作速度']
-    i2=['原始\n分數',reader.getData('Task1'),                           reader.getData('Task2'),          reader.getData('Task3'),        reader.getData('Task4'),       reader.getData('Task5')]
-    print(i2)
-    i3=['量尺\n分數',newScore(i2[1], 20.5, 7.25, 10, 3),newScore(i2[2], 29.5, 11, 10, 3), newScore(i2[3], 29, 10, 10, 3),newScore(i2[4], 69, 28, 10, 3),newScore(i2[5], 31, 16, 10, 3)]
-    i4=['PR值',     prValue(i2[1], 20.5, 7.25),                 prValue(i2[2], 29.5, 11),prValue(i2[3], 29, 10),prValue(i2[4], 69, 28), prValue(i2[5], 31, 16)]
-    tableList2=[i1,i2,i3,i4]
-    writer.add_table([4,6],tableList2)
-
-
-    ##table3
-    table2=tableList2[2]
-    i1=['',         '圓形序列＋六邊形序列',            '圓形六邊形轉換 - 視覺掃描',    '圓形六邊形轉換 - 圓形序列','圓形六邊形轉換 - 六邊形序列','圓形六邊形轉換- 圓形序列＋六邊形序列','圓形六邊形轉換 - 動作速度']
-    i2=['計分\n結果',float(f'{table2[2]+table2[3]:.3}'),   float(f'{table2[1]-table2[2]:.3}'),        float(f'{table2[4]-table2[2]:.3}'),      float(f'{table2[4]-table2[3]:.3}'),       float(f'{table2[4]-table2[2]+table2[3]:.3}'),                float(f'{table2[4]-table2[5]:.3}')]
-    i3=['量尺\n分數',newScore(i2[1], 19.5, 5.25, 10, 3), newScore(i2[2], 0, 3.75, 10, 3),newScore(i2[3], 0, 3, 10, 3), newScore(i2[4], 0, 3, 10, 3),    newScore(i2[5], 0, 3, 10, 3),  newScore(i2[6], 0, 3, 10, 3)]
-    i4=['PR值',      prValue(i2[1], 19.5, 5.25),prValue(i2[2], 0, 3.75),prValue(i2[3], 0, 3), prValue(i2[4], 0, 3),  prValue(i2[5], 0, 3),           prValue(i2[6], 0, 3)]
-    tableList3=[i1,i2,i3,i4]
-    writer.add_paragraph('')
-    writer.add_paragraph('衍生測量:')
-
-    writer.add_table([4,7],tableList3)
-    
-    writer.add_paragraph('')
-    writer.add_paragraph('選擇性測量：錯誤分析')
-    ##table4
-    tableList4=[
-    ['',        '情境一：\n視覺掃描','情境二：\n圓形序列','情境三：\n六邊形序列','情境四：\n圓形六邊形轉換','情境五：\n動作速度'],
-    ['疏忽錯誤'],
-    ['任務錯誤'],
-    ['序列錯誤'],
-    ['不正確反應錯誤'],
-    ['時間中止錯誤'],
-    ['錯誤總數']
-    ]
-    writer.add_table([7,6],tableList4)
-    writer.add_paragraph('*原始分數/累積百分位數')
+    writer.getBasicInfo()
+    #writer.getBasicMeasure()
+    #writer.getMoreMeasure()
+    #writer.getErrorTable()
     writer.add_paragraph('')
     writer.add_paragraph('說明:')
     
