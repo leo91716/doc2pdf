@@ -15,6 +15,7 @@ from tkinter import filedialog
 import traceback
 import csv
 
+
 def callback_error(*args):
     # Build the error message
     message = 'Generic error:\n\n'
@@ -53,7 +54,7 @@ def go(dest_folder, source_folder):
     for file in glob.glob(source_folder+"\\*.csv"):
         with open(file,newline='') as csvfile:
             rows = list(csv.reader(csvfile))
-            reader=Reader_Track(rows)
+            reader=Reader(rows)
             writer=Writer_Fluent(reader)
             excel2doc(writer, file,dest_folder)
             i+=1
@@ -89,11 +90,19 @@ class Writer_Track():
 
     def add_paragraph(self,context):
         self.doc.add_paragraph(context)
-    def add_table(self,size,context):
+    def add_table(self,size,context, merge=[]):
         table = self.doc.add_table(rows = size[0], cols = size[1], style='TableGrid')
         for index, item in enumerate(context):
             for index2, item2 in enumerate(item):
                 table.cell(index,index2).text=str(item2)
+                
+        for col in table.columns:
+            for cell in col.cells:
+                cell.paragraphs[0].alignment = 1
+        if merge:
+            a=table.cell(*merge[0])
+            b=table.cell(*merge[1])
+            a.merge(b)
     
     def save(self,path):
         self.doc.save(path)
@@ -118,7 +127,7 @@ class Writer_Track():
         self.add_paragraph('基本測量:')
         reader=self.reader
         i1=['',         '情境一：\n視覺掃描',                                '情境二：\n圓形序列',              '情境三：\n六邊形序列',          '情境四：\n圓形六邊形轉換',     '情境五：\n動作速度']
-        i2=['原始\n分數',reader.getData('Task1'),                           reader.getData('Task2'),          reader.getData('Task3'),        reader.getData('Task4'),       reader.getData('Task5')]
+        i2=['原始\n分數',reader.getData('Task1','Complete_Time'),                           reader.getData('Task2','Complete_Time'),          reader.getData('Task3','Complete_Time'),        reader.getData('Task4','Complete_Time'),       reader.getData('Task5','Complete_Time')]
         print(i2)
         i3=['量尺\n分數',newScore(i2[1], 20.5, 7.25, 10, 3),newScore(i2[2], 29.5, 11, 10, 3), newScore(i2[3], 29, 10, 10, 3),newScore(i2[4], 69, 28, 10, 3),newScore(i2[5], 31, 16, 10, 3)]
         i4=['PR值',     prValue(i2[1], 20.5, 7.25),                 prValue(i2[2], 29.5, 11),prValue(i2[3], 29, 10),prValue(i2[4], 69, 28), prValue(i2[5], 31, 16)]
@@ -137,7 +146,7 @@ class Writer_Track():
         self.add_paragraph('衍生測量:')
         self.add_table([4,7],tableList3)
 
-    def getErrorTable(self):
+    def getOptionalTable(self):
         self.add_paragraph('')
         self.add_paragraph('選擇性測量：錯誤分析')
         ##table4
@@ -152,11 +161,38 @@ class Writer_Track():
         ]
         self.add_table([7,6],tableList4)
         self.add_paragraph('*原始分數/累積百分位數')
-class Writer_Fluent(Writer_Track):
-    pass
+class Writer_Fluent(Writer_Track):  #self, task,item,doubleCheck=None):
+    def getBasicMeasure(self):
+        self.add_paragraph('')
+        self.add_title('設計流暢性測驗')
+        self.add_paragraph('基本測量:')
+        reader=self.reader
+        getDataArg=('Examing','Total_CorrectDesign',False)
+        i0=['','總正確數']
+        i1=['',         '情境1\n黑點相連',                                '情境2\n白點相連',             '情境3 黑點和白點互相轉換','設計流暢性\n總和']
+        i2=['原始分數',reader.getData(*getDataArg,'情境1_黑點相連'),                           reader.getData(*getDataArg,'情境2_白點相連'),          reader.getData(*getDataArg,'情境3_黑點和白點互相轉換')]
+        i2end=[int(i2[1])+int(i2[2])+int(i2[3])]
+        i2=i2+i2end
+        print(i2)
+        #i3=['量尺\n分數',newScore(i2[1], 20.5, 7.25, 10, 3),newScore(i2[2], 29.5, 11, 10, 3), newScore(i2[3], 29, 10, 10, 3),newScore(i2[4], 69, 28, 10, 3),newScore(i2[5], 31, 16, 10, 3)]
+        #i4=['PR值',     prValue(i2[1], 20.5, 7.25),                 prValue(i2[2], 29.5, 11),prValue(i2[3], 29, 10),prValue(i2[4], 69, 28), prValue(i2[5], 31, 16)]
+        self.tableList2=[i0,i1,i2]
+        merge=[(0,1),(0,4)]
+        self.add_table([5,5],self.tableList2,merge)
+    def getOptionalTable(self):
+        self.add_paragraph('')
+        self.add_paragraph('選擇性測量')
+        ##table4
+        tableList4=[
+        ['',        '不正確設計數','重複設計','嘗試設計總數','正確設計百分比'],
+        ['原始總分'],
+        ['量尺分數'],
+        ['PR值'],
+        ]
+        self.add_table([4,5],tableList4)
 
 
-class Reader_Track():
+class Reader():
     source_folder=os.getcwd()
     #source_folder can only be used in Reader.source_folder and it cannot be used in any instance
     def __init__(self, rows):
@@ -172,18 +208,23 @@ class Reader_Track():
         labelsource["text"] = '輸入資料夾:  '+Reader.source_folder
         pb["maximum"] = len(glob.glob(Reader.source_folder+"\\*.csv"))
     
-    def getData(self, task):
+    def getData(self, task,item,thousand=True,doubleCheck=None):
         rows=self.rows
         i=0
         while i<len(rows):
             if rows[i][0]==task:
-                i+=1
-                while rows[i][0]=='':
-                    if rows[i][1]=='Complete_Time':
-                        return float(f'{float(rows[i][2])/1000:.3f}')
-                        break
+                if doubleCheck==None or rows[i][2]==doubleCheck:
                     i+=1
-                break
+                    while rows[i][0]=='':
+                        if rows[i][1]==item:    #'Complete_Time'
+                            if thousand:
+                                thousandNumber=1000
+                            else:
+                                thousandNumber=1
+                            return float(f'{float(rows[i][2])/thousandNumber:.3f}')
+                            break
+                        i+=1
+                    break
             i+=1
 
 
@@ -224,9 +265,9 @@ def newScore(data, mean,std, new_mean, new_std):
 def excel2doc(writer, file, destFolder):
     
     writer.getBasicInfo()
-    #writer.getBasicMeasure()
-    #writer.getMoreMeasure()
-    #writer.getErrorTable()
+    writer.getBasicMeasure()
+    # writer.getMoreMeasure()
+    writer.getOptionalTable()
     writer.add_paragraph('')
     writer.add_paragraph('說明:')
     
