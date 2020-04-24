@@ -14,7 +14,7 @@ from tkinter import messagebox
 from tkinter import filedialog
 import traceback
 import csv
-
+from tkinter.ttk import Combobox
 
 def callback_error(*args):
     # Build the error message
@@ -36,10 +36,8 @@ def chooseDest():
 
 
 
-
-
-
-def go(dest_folder, source_folder):
+def go(dest_folder, source_folder,exper):
+    expList={'軌跡標示測驗':'TMTest','設計流暢測驗':'DFTest'}
     i=0
     if not os.path.isdir(dest_folder+'/word'):
         os.makedirs(dest_folder+'/word')
@@ -50,12 +48,15 @@ def go(dest_folder, source_folder):
     filelist = [ f for f in os.listdir(dest_folder+'/pdf') if f.endswith(".pdf") ]
     for f in filelist:
         os.remove(os.path.join(dest_folder+'/pdf', f))
-
-    for file in glob.glob(source_folder+"\\*.csv"):
+    pb["maximum"] = len(glob.glob(source_folder+"\\"+expList[exper]+"_*.csv"))
+    for file in glob.glob(source_folder+"\\"+expList[exper]+"_*.csv"):
         with open(file,newline='') as csvfile:
             rows = list(csv.reader(csvfile))
             reader=Reader(rows)
-            writer=Writer_Fluent(reader)
+            if exper=='軌跡標示測驗':
+                writer=Writer_Track(reader)
+            else:
+                writer=Writer_Fluent(reader)
             excel2doc(writer, file,dest_folder)
             i+=1
             pb["value"] = i
@@ -206,7 +207,7 @@ class Reader():
         if not Reader.source_folder:
             Reader.source_folder =old_folder
         labelsource["text"] = '輸入資料夾:  '+Reader.source_folder
-        pb["maximum"] = len(glob.glob(Reader.source_folder+"\\*.csv"))
+        #pb["maximum"] = len(glob.glob(Reader.source_folder+"\\*.csv"))
     
     def getData(self, task,item,thousand=True,doubleCheck=None):
         rows=self.rows
@@ -311,23 +312,32 @@ try:
     dest_folder =os.getcwd()
     labeldest = Label(root)                 # 標籤內容             
     btndest = Button(root,text="選擇路徑",command=lambda: chooseDest())
-    btnGo = Button(root,text="執行",command=lambda: go(dest_folder,Reader.source_folder))
-    labeldest.grid(row=0,column=0,padx=10,pady=10)       
-    btndest.grid(row=0,column=1,padx=10,pady=10, sticky="w")   
+    btnGo = Button(root,text="執行",command=lambda: go(dest_folder,Reader.source_folder,expVar.get()))
+    labeldest.grid(row=0,column=0,padx=10,pady=5, sticky="w")       
+    btndest.grid(row=0,column=1,padx=10,pady=5, sticky="w")   
     
 
 
     labelsource = Label(root) 
     btnsource = Button(root,text="選擇路徑",command=lambda: Reader.chooseSource())
-    labelsource.grid(row=1,column=0,padx=10,pady=10)         
-                  
-    btnsource.grid(row=1,column=1,padx=10,pady=10, sticky="w")  
+    labelsource.grid(row=1,column=0,padx=10,pady=5, sticky="w")         
+    btnsource.grid(row=1,column=1,padx=10,pady=5, sticky="w")
 
-    Separator(root,orient=HORIZONTAL).grid(row=2, columnspan=2, sticky="ew")
+    labelExp = Label(root,text='實驗:') 
+    labelExp.grid(row=2,column=0,padx=10,pady=5, sticky="e")   
+    expVar = StringVar()       
+    cb = Combobox(root,textvariable=expVar,        # 建立Combobox
+                value=("軌跡標示測驗","設計流暢測驗"))   
+    cb.current(0)
+    cb.grid(row=2,column=1,padx=10,pady=5, sticky="w")     
 
-    btnGo.grid(row=3,column=0,padx=10,pady=10, sticky="w")   
+
+
+    Separator(root,orient=HORIZONTAL).grid(row=3, columnspan=2, sticky="ew")
+
+    btnGo.grid(row=4,column=0,padx=10,pady=5, sticky="e")   
     pb = Progressbar(root,length=200,mode="determinate",orient=HORIZONTAL)
-    pb.grid(row=3,column=1,padx=10,pady=10, sticky="w")
+    pb.grid(row=4,column=1,padx=10,pady=5, sticky="w")
     labeldest["text"] = '輸出資料夾:  '+dest_folder
     labelsource['text']='讀取資料夾   '+Reader.source_folder
     
