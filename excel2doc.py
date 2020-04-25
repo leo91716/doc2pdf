@@ -16,6 +16,7 @@ import traceback
 import csv
 from tkinter.ttk import Combobox
 
+
 def callback_error(*args):
     # Build the error message
     message = 'Generic error:\n\n'
@@ -34,37 +35,63 @@ def chooseDest():
         dest_folder =old_folder
     labeldest["text"] = '輸出資料夾:  '+dest_folder
 
-
-
-def go(dest_folder, source_folder,exper):
-    expList={'軌跡標示測驗':'TMTest','設計流暢測驗':'DFTest'}
-    i=0
-    if not os.path.isdir(dest_folder+'/word'):
-        os.makedirs(dest_folder+'/word')
-    if not os.path.isdir(dest_folder+'/pdf'):
-        os.makedirs(dest_folder+'/pdf')
-    
-
-    filelist = [ f for f in os.listdir(dest_folder+'/pdf') if f.endswith(".pdf") ]
-    for f in filelist:
-        os.remove(os.path.join(dest_folder+'/pdf', f))
-    pb["maximum"] = len(glob.glob(source_folder+"\\"+expList[exper]+"_*.csv"))
-    for file in glob.glob(source_folder+"\\"+expList[exper]+"_*.csv"):
-        with open(file,newline='') as csvfile:
-            rows = list(csv.reader(csvfile))
-            reader=Reader(rows)
-            if exper=='軌跡標示測驗':
-                writer=Writer_Track(reader)
-            else:
-                writer=Writer_Fluent(reader)
-            excel2doc(writer, file,dest_folder)
-            i+=1
-            pb["value"] = i
-            root.update()
-
+class Primary():
+    def go(self,dest_folder, source_folder,exper):
+        expList={'軌跡標示測驗':'TMTest','設計流暢測驗':'DFTest'}
+        i=0
+        if not os.path.isdir(dest_folder+'/word'):
+            os.makedirs(dest_folder+'/word')
+        if not os.path.isdir(dest_folder+'/pdf'):
+            os.makedirs(dest_folder+'/pdf')
         
-    messagebox.showinfo(root,"成功將所有 Excel 輸出成 pdf")
-    root.destroy()
+
+        filelist = [ f for f in os.listdir(dest_folder+'/pdf') if f.endswith(".pdf") ]
+        for f in filelist:
+            os.remove(os.path.join(dest_folder+'/pdf', f))
+        if len(glob.glob(source_folder+"\\"+expList[exper]+"_*.csv"))==0:
+            messagebox.showwarning(root," \n 失敗: 找不到要讀的檔案")
+            exit()
+        pb["maximum"] = len(glob.glob(source_folder+"\\"+expList[exper]+"_*.csv"))
+        for file in glob.glob(source_folder+"\\"+expList[exper]+"_*.csv"):
+            with open(file,newline='') as csvfile:
+                rows = list(csv.reader(csvfile))
+                reader=Reader(rows)
+                if exper=='軌跡標示測驗':
+                    writer=Writer_Track(reader)
+                else:
+                    writer=Writer_Fluent(reader)
+                self.excel2doc(writer, file,dest_folder)
+                i+=1
+                pb["value"] = i
+                root.update()
+
+            
+        messagebox.showinfo(root,"成功將所有 Excel 輸出成 pdf")
+        root.destroy()
+    def excel2doc(self,writer, file, destFolder):
+        writer.write_all()
+        self.file=file
+        self.destFolder=destFolder
+        self.writer=writer
+        self.save()
+    def save(self):
+        file=self.file
+        writer=self.writer
+        destFolder=self.destFolder
+        file=os.path.basename(file)
+        file=file.split('.')[0]
+        writer.save(destFolder+'/word/'+file+'.docx')
+        #doc to pdf
+        wdFormatPDF = 17
+        in_file = destFolder+'/word/'+file+'.docx'
+        out_file = destFolder+'/pdf/'+file+'.pdf'
+        #print('infile',in_file)
+        #print('outfile',out_file)
+        self.word = comtypes.client.CreateObject('Word.Application')
+        self.doc = self.word.Documents.Open(in_file)
+        self.doc.SaveAs(out_file, FileFormat=wdFormatPDF)
+        self.doc.Close()
+        self.word.Quit()
 
 
 class Writer_Track():
@@ -142,7 +169,7 @@ class Writer_Track():
         ##table3
         table2=self.tableList2[2]
         i1=['',         '圓形序列＋六邊形序列',            '圓形六邊形轉換 - 視覺掃描',    '圓形六邊形轉換 - 圓形序列','圓形六邊形轉換 - 六邊形序列','圓形六邊形轉換- 圓形序列＋六邊形序列','圓形六邊形轉換 - 動作速度']
-        i2=['計分\n結果',float(f'{table2[2]+table2[3]:.3}'),   float(f'{table2[1]-table2[2]:.3}'),        float(f'{table2[4]-table2[2]:.3}'),      float(f'{table2[4]-table2[3]:.3}'),       float(f'{table2[4]-table2[2]+table2[3]:.3}'),                float(f'{table2[4]-table2[5]:.3}')]
+        i2=['計分\n結果',table2[2]+table2[3],   table2[1]-table2[2],        table2[4]-table2[2],      table2[4]-table2[3],       table2[4]-table2[2]+table2[3],                table2[4]-table2[5]]
         i3=['量尺\n分數',newScore(i2[1], 19.5, 5.25, 10, 3), newScore(i2[2], 0, 3.75, 10, 3),newScore(i2[3], 0, 3, 10, 3), newScore(i2[4], 0, 3, 10, 3),    newScore(i2[5], 0, 3, 10, 3),  newScore(i2[6], 0, 3, 10, 3)]
         i4=['PR值',      prValue(i2[1], 19.5, 5.25),prValue(i2[2], 0, 3.75),prValue(i2[3], 0, 3), prValue(i2[4], 0, 3),  prValue(i2[5], 0, 3),           prValue(i2[6], 0, 3)]
         tableList3=[i1,i2,i3,i4]
@@ -173,7 +200,7 @@ class Writer_Track():
         self.add_paragraph('')
         self.add_paragraph('說明:')
 
-class Writer_Fluent(Writer_Track):  #self, task,item,doubleCheck=None):
+class Writer_Fluent(Writer_Track):  #newScore(data, mean,std, new_mean, new_std)
     def getBasicMeasure(self):
         self.add_paragraph('')
         self.add_title('設計流暢性測驗')
@@ -185,12 +212,24 @@ class Writer_Fluent(Writer_Track):  #self, task,item,doubleCheck=None):
         i2=['原始分數',int(reader.getData(*getDataArg,'情境1_黑點相連')),                           int(reader.getData(*getDataArg,'情境2_白點相連')),          int(reader.getData(*getDataArg,'情境3_黑點和白點互相轉換'))]
         i2end=[i2[1]+i2[2]+i2[3]]
         i2=i2+i2end
-        print(i2)
-        #i3=['量尺\n分數',newScore(i2[1], 20.5, 7.25, 10, 3),newScore(i2[2], 29.5, 11, 10, 3), newScore(i2[3], 29, 10, 10, 3),newScore(i2[4], 69, 28, 10, 3),newScore(i2[5], 31, 16, 10, 3)]
+        #print(i2)
+        i3=['量尺\n分數',newScore(i2[1], 10, 3.75, 10, 3),newScore(i2[2], 11, 4, 10, 3), newScore(i2[3], 8, 3, 10, 3),newScore(i2[4], 29, 7.5, 10, 3)]
         #i4=['PR值',     prValue(i2[1], 20.5, 7.25),                 prValue(i2[2], 29.5, 11),prValue(i2[3], 29, 10),prValue(i2[4], 69, 28), prValue(i2[5], 31, 16)]
-        self.tableList2=[i0,i1,i2]
+        self.tableList2=[i0,i1,i2,i3]
         merge=[(0,1),(0,4)]
         self.add_table([5,5],self.tableList2,merge)
+    
+    def getMoreMeasure(self):
+        table2=self.tableList2[3]
+        i1=['',         '實心點連結＋空心點連結\n組合總正確數','轉換 - 實心點連結＋空心點連結']
+        i2=['計分\n結果',table2[1]+table2[2],   table2[3]-table2[1]-table2[2]]
+        i3=['量尺\n分數',newScore(i2[1], 19.5, 6, 10, 3), newScore(i2[2], 0, 3, 10, 3)]
+        i4=['PR值']
+        tableList3=[i1,i2,i3,i4]
+        self.add_paragraph('')
+        self.add_paragraph('衍生測量:')
+        self.add_table([4,3],tableList3)
+
     def getOptionalTable(self):
         self.add_paragraph('')
         self.add_paragraph('選擇性測量')
@@ -202,8 +241,6 @@ class Writer_Fluent(Writer_Track):  #self, task,item,doubleCheck=None):
         ['PR值'],
         ]
         self.add_table([4,5],tableList4)
-    def getMoreMeasure(self):
-        pass
 
 
 class Reader():
@@ -276,28 +313,7 @@ def newScore(data, mean,std, new_mean, new_std):
 
 
 
-def excel2doc(writer, file, destFolder):
-    writer.write_all()
     
-    
-
-    #print(sh.nrows)
-    #print(dir(doc.styles['Normal'].font))
-    
-    file=os.path.basename(file)
-    file=file.split('.')[0]
-    writer.save(destFolder+'/word/'+file+'.docx')
-    #doc to pdf
-    wdFormatPDF = 17
-    in_file = destFolder+'/word/'+file+'.docx'
-    out_file = destFolder+'/pdf/'+file+'.pdf'
-    #print('infile',in_file)
-    #print('outfile',out_file)
-    word = comtypes.client.CreateObject('Word.Application')
-    doc = word.Documents.Open(in_file)
-    doc.SaveAs(out_file, FileFormat=wdFormatPDF)
-    doc.Close()
-    word.Quit()
     
 
 
@@ -315,12 +331,12 @@ try:
     positionRight = int(root.winfo_screenwidth()/2 - windowWidth/2)
     positionDown = int(root.winfo_screenheight()/2 - windowHeight/2)
     root.geometry(f"+{positionRight}+{positionDown}")
-
+    primary=Primary()
     Reader.source_folder=os.getcwd()
     dest_folder =os.getcwd()
     labeldest = Label(root)                 # 標籤內容             
     btndest = Button(root,text="選擇路徑",command=lambda: chooseDest())
-    btnGo = Button(root,text="執行",command=lambda: go(dest_folder,Reader.source_folder,expVar.get()))
+    btnGo = Button(root,text="執行",command=lambda: primary.go(dest_folder,Reader.source_folder,expVar.get()))
     labeldest.grid(row=0,column=0,padx=10,pady=5, sticky="w")       
     btndest.grid(row=0,column=1,padx=10,pady=5, sticky="w")   
     
@@ -354,16 +370,27 @@ try:
     pb["value"] = 0
     
     root.mainloop()
+
 except Exception as e:
+    try:
+        primary.save()
+    except:
+        print('resave error')
     print('錯誤!!!!')
     print(type(e).__module__, type(e).__qualname__)
     messagebox.showwarning(root," \n 失敗: 無法將所有 Excel 輸出成 pdf\n\n提醒:所有檔案必須關閉\n\n錯誤訊息: "+str(e))
     
     root.destroy()
+    
 except:
+    try:
+        primary.save()
+    except:
+        print('resave error')
     print('錯誤!!!!')
-    messagebox.showwarning(root," \n 失敗: 無法將所有 Excel 輸出成 pdf\n\n提醒:所有檔案必須關閉")
+    messagebox.showwarning(root," \n 失敗: 無法將所有 Excel 輸出成 pdf\n\n提醒:所有檔案必須關閉 ")
     root.destroy()
+
 
 
     
