@@ -95,7 +95,10 @@ class Writer_Track():
         table = self.doc.add_table(rows = size[0], cols = size[1], style='TableGrid')
         for index, item in enumerate(context):
             for index2, item2 in enumerate(item):
-                table.cell(index,index2).text=str(item2)
+                if type(item2)==float:
+                    table.cell(index,index2).text=f'{item2:.3f}'
+                else:
+                    table.cell(index,index2).text=str(item2)
                 
         for col in table.columns:
             for cell in col.cells:
@@ -162,6 +165,14 @@ class Writer_Track():
         ]
         self.add_table([7,6],tableList4)
         self.add_paragraph('*原始分數/累積百分位數')
+    def write_all(self):
+        self.getBasicInfo()
+        self.getBasicMeasure()
+        self.getMoreMeasure()
+        self.getOptionalTable()
+        self.add_paragraph('')
+        self.add_paragraph('說明:')
+
 class Writer_Fluent(Writer_Track):  #self, task,item,doubleCheck=None):
     def getBasicMeasure(self):
         self.add_paragraph('')
@@ -171,8 +182,8 @@ class Writer_Fluent(Writer_Track):  #self, task,item,doubleCheck=None):
         getDataArg=('Examing','Total_CorrectDesign',False)
         i0=['','總正確數']
         i1=['',         '情境1\n黑點相連',                                '情境2\n白點相連',             '情境3 黑點和白點互相轉換','設計流暢性\n總和']
-        i2=['原始分數',reader.getData(*getDataArg,'情境1_黑點相連'),                           reader.getData(*getDataArg,'情境2_白點相連'),          reader.getData(*getDataArg,'情境3_黑點和白點互相轉換')]
-        i2end=[int(i2[1])+int(i2[2])+int(i2[3])]
+        i2=['原始分數',int(reader.getData(*getDataArg,'情境1_黑點相連')),                           int(reader.getData(*getDataArg,'情境2_白點相連')),          int(reader.getData(*getDataArg,'情境3_黑點和白點互相轉換'))]
+        i2end=[i2[1]+i2[2]+i2[3]]
         i2=i2+i2end
         print(i2)
         #i3=['量尺\n分數',newScore(i2[1], 20.5, 7.25, 10, 3),newScore(i2[2], 29.5, 11, 10, 3), newScore(i2[3], 29, 10, 10, 3),newScore(i2[4], 69, 28, 10, 3),newScore(i2[5], 31, 16, 10, 3)]
@@ -185,12 +196,14 @@ class Writer_Fluent(Writer_Track):  #self, task,item,doubleCheck=None):
         self.add_paragraph('選擇性測量')
         ##table4
         tableList4=[
-        ['',        '不正確設計數','重複設計','嘗試設計總數','正確設計百分比'],
+        ['',        '不正確設計數','重複設計','嘗試設計總數','正確設計\n百分比'],
         ['原始總分'],
         ['量尺分數'],
         ['PR值'],
         ]
         self.add_table([4,5],tableList4)
+    def getMoreMeasure(self):
+        pass
 
 
 class Reader():
@@ -222,7 +235,7 @@ class Reader():
                                 thousandNumber=1000
                             else:
                                 thousandNumber=1
-                            return float(f'{float(rows[i][2])/thousandNumber:.3f}')
+                            return float(rows[i][2])/thousandNumber
                             break
                         i+=1
                     break
@@ -259,18 +272,13 @@ def prValue(data,mean,std, norm=norm):
 
 
 def newScore(data, mean,std, new_mean, new_std):
-    return float(f'{(data-mean)/std*new_std+new_mean:.3f}')
+    return (data-mean)/std*new_std+new_mean
 
 
 
 def excel2doc(writer, file, destFolder):
+    writer.write_all()
     
-    writer.getBasicInfo()
-    writer.getBasicMeasure()
-    # writer.getMoreMeasure()
-    writer.getOptionalTable()
-    writer.add_paragraph('')
-    writer.add_paragraph('說明:')
     
 
     #print(sh.nrows)
