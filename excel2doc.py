@@ -222,24 +222,34 @@ class Writer_Fluent(Writer_Track):  #newScore(data, mean,std, new_mean, new_std)
     def getMoreMeasure(self):
         table2=self.tableList2[3]
         i1=['',         '實心點連結＋空心點連結\n組合總正確數','轉換 - 實心點連結＋空心點連結']
-        i2=['計分\n結果',table2[1]+table2[2],   table2[3]-table2[1]-table2[2]]
-        i3=['量尺\n分數',newScore(i2[1], 19.5, 6, 10, 3), newScore(i2[2], 0, 3, 10, 3)]
+        i2=['計分結果',table2[1]+table2[2],   table2[3]-table2[1]-table2[2]]
+        i3=['量尺分數',newScore(i2[1], 19.5, 6, 10, 3), newScore(i2[2], 0, 3, 10, 3)]
         i4=['PR值']
         tableList3=[i1,i2,i3,i4]
         self.add_paragraph('')
         self.add_paragraph('衍生測量:')
         self.add_table([4,3],tableList3)
 
-    def getOptionalTable(self):
+    def getOptionalTable(self): #getData(self, task,item,thousand=True,doubleCheck=None)
         self.add_paragraph('')
         self.add_paragraph('選擇性測量')
+        getData=self.reader.getData
+        table2=self.tableList2[2]
+        getDataArg1=['Examing','Total_UnCorrectDesign',False]
+        getDataArg2=['Examing','Total_RepeatDesign',False]
+        getDataArg3=['Examing','Total_TryDesign',False]
         ##table4
-        tableList4=[
-        ['',        '不正確設計數','重複設計','嘗試設計總數','正確設計\n百分比'],
-        ['原始總分'],
-        ['量尺分數'],
-        ['PR值'],
-        ]
+        
+        i1=['',        '不正確設計數','重複設計','嘗試設計總數','正確設計\n百分比']
+
+        i2=['原始總分',getData(*getDataArg1,'情境1_黑點相連')+getData(*getDataArg1,'情境2_白點相連')+getData(*getDataArg1,'情境3_黑點和白點互相轉換'),
+        getData(*getDataArg2,'情境1_黑點相連')+getData(*getDataArg2,'情境2_白點相連')+getData(*getDataArg2,'情境3_黑點和白點互相轉換'),
+        getData(*getDataArg3,'情境1_黑點相連')+getData(*getDataArg3,'情境2_白點相連')+getData(*getDataArg3,'情境3_黑點和白點互相轉換')]
+        i2End=[table2[4]/i2[3]]
+        i2=i2+i2End
+        i3=['量尺分數']
+        i4=['PR值']
+        tableList4=[i1,i2,i3,i4]
         self.add_table([4,5],tableList4)
 
 
