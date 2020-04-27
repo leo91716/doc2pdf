@@ -16,9 +16,16 @@ class GetDistribution():
                 self.addToNorm(reader)
                 #self.files.append(list(csv.reader(csvfile)))
         for item in self.data['table2']:
-            item.sort()
+            item.sort(reverse=self.Writer.getNormReverse())
+            newItem=[]
+            for subItems in item:
+                newItem.append((subItems,(item.index(subItems)+item.count(subItems))/len(item)))
+            item.clear()
+            item.extend(newItem)
+
         
         print(self.data)
+        print('table2 len: ',len(self.data['table2']))
     def addToNorm(self,reader):
         
         #table2data=[reader.getData('Task1','Complete_Time'),reader.getData('Task2','Complete_Time'),reader.getData('Task3','Complete_Time'),reader.getData('Task4','Complete_Time'),reader.getData('Task5','Complete_Time')]
@@ -57,6 +64,6 @@ class GetDistribution():
 
 
 if __name__=='__main__':
-    dist=GetDistribution(r"E:\執行功能output3\EFs_dta\dta_csv集合\DFTest_*.csv",Writer_Fluent)
+    dist=GetDistribution(r"E:\執行功能output3\EFs_dta\dta_csv集合\TMTest_*.csv",Writer_Track)
     reader=Reader
     dist.buildNorm(Reader)

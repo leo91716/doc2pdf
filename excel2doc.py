@@ -111,7 +111,9 @@ class Writer_Track():
         font.size = Pt(16)
 
         new_heading_style._element.rPr.rFonts.set(qn('w:eastAsia'), u'標楷體')
-
+    @staticmethod
+    def getNormReverse():
+        return True
     def add_title(self,title):
         paragraph = self.doc.add_paragraph(title, style='New Heading')
         paragraph.alignment = 1
@@ -215,7 +217,9 @@ class Writer_Fluent(Writer_Track):  #newScore(data, mean,std, new_mean, new_std)
         i2end=[sum(i2)]
         i2=i2+i2end
         return i2
-
+    @staticmethod
+    def getNormReverse():
+        return False
     def getBasicMeasure(self):
         self.add_paragraph('')
         self.add_title('設計流暢性測驗')
