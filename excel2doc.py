@@ -173,12 +173,15 @@ class Writer_Track():
         i4=['PR值',     prValue(i2[1], 20.5, 7.25),                 prValue(i2[2], 29.5, 11),prValue(i2[3], 29, 10),prValue(i2[4], 69, 28), prValue(i2[5], 31, 16)]
         self.tableList2=[i1,i2,i3,i4]
         self.add_table([4,6],self.tableList2)
-
+    @staticmethod
+    def getMoreMeasureI2(table2):
+        return [table2[1]+table2[2],   table2[0]-table2[1],        table2[3]-table2[1],      table2[3]-table2[2],       table2[3]-table2[1]-table2[2],                table2[3]-table2[4]]
     def getMoreMeasure(self):
         ##table3
-        table2=self.tableList2[2]
+        table2=self.tableList2[2][1:]
         i1=['',         '圓形序列＋六邊形序列',            '圓形六邊形轉換 - 視覺掃描',    '圓形六邊形轉換 - 圓形序列','圓形六邊形轉換 - 六邊形序列','圓形六邊形轉換- 圓形序列＋六邊形序列','圓形六邊形轉換 - 動作速度']
-        i2=['計分\n結果',table2[2]+table2[3],   table2[1]-table2[2],        table2[4]-table2[2],      table2[4]-table2[3],       table2[4]-table2[2]-table2[3],                table2[4]-table2[5]]
+        i2=['計分\n結果']+Writer_Track.getMoreMeasureI2(table2)
+        # [table2[2]+table2[3],   table2[1]-table2[2],        table2[4]-table2[2],      table2[4]-table2[3],       table2[4]-table2[2]-table2[3],                table2[4]-table2[5]]
         i3=['量尺\n分數',newScore(i2[1], 19.5, 5.25, 10, 3), newScore(i2[2], 0, 3.75, 10, 3),newScore(i2[3], 0, 3, 10, 3), newScore(i2[4], 0, 3, 10, 3),    newScore(i2[5], 0, 3, 10, 3),  newScore(i2[6], 0, 3, 10, 3)]
         i4=['PR值',      prValue(i2[1], 19.5, 5.25),prValue(i2[2], 0, 3.75),prValue(i2[3], 0, 3), prValue(i2[4], 0, 3),  prValue(i2[5], 0, 3),           prValue(i2[6], 0, 3)]
         tableList3=[i1,i2,i3,i4]
@@ -234,11 +237,14 @@ class Writer_Fluent(Writer_Track):  #newScore(data, mean,std, new_mean, new_std)
         self.tableList2=[i0,i1,i2,i3]
         merge=[(0,1),(0,4)]
         self.add_table([5,5],self.tableList2,merge)
-    
+    @staticmethod
+    def getMoreMeasureI2(table2):
+        return [table2[0]+table2[1],   table2[2]-table2[0]-table2[1]]
     def getMoreMeasure(self):
-        table2=self.tableList2[3]
+        table2=self.tableList2[3][1:]
         i1=['',         '實心點連結＋空心點連結\n組合總正確數','轉換 - 實心點連結＋空心點連結']
-        i2=['計分結果',table2[1]+table2[2],   table2[3]-table2[1]-table2[2]]
+        i2=['計分結果']+Writer_Fluent.getMoreMeasureI2(table2)
+        #,table2[1]+table2[2],   table2[3]-table2[1]-table2[2]]
         i3=['量尺分數',newScore(i2[1], 19.5, 6, 10, 3), newScore(i2[2], 0, 3, 10, 3)]
         i4=['PR值']
         tableList3=[i1,i2,i3,i4]
