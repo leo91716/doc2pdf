@@ -93,7 +93,9 @@ class GetDistribution():
                 if cumulativePercentage>0.99:
                     cumulativePercentage=0.99
                 scaleScore=10+3*norm.ppf(cumulativePercentage)
-                newItem.append((subItems,scaleScore,cumulativePercentage)) # get Cumulative percentage (0~1)
+                pr=int(cumulativePercentage*100)
+
+                newItem.append((subItems,scaleScore,pr,cumulativePercentage)) # get Cumulative percentage (0~1)
             item.clear()
             item.extend(newItem)
     def addToNorm(self,source,dest):

@@ -15,7 +15,7 @@ from tkinter import filedialog
 import traceback
 import csv
 from tkinter.ttk import Combobox
-
+import pickle
 
 def callback_error(*args):
     # Build the error message
@@ -52,18 +52,20 @@ class Primary():
             messagebox.showwarning(root," \n 失敗: 找不到要讀的檔案")
             exit()
         pb["maximum"] = len(glob.glob(source_folder+"\\"+expList[exper]+"_*.csv"))
-        for file in glob.glob(source_folder+"\\"+expList[exper]+"_*.csv"):
-            with open(file,newline='') as csvfile:
-                rows = list(csv.reader(csvfile))
-                reader=Reader(rows)
-                if exper=='軌跡標示測驗':
-                    writer=Writer_Track(reader)
-                else:
-                    writer=Writer_Fluent(reader)
-                self.excel2doc(writer, file,dest_folder)
-                i+=1
-                pb["value"] = i
-                root.update()
+        with open('norm.pickle', 'rb') as file:
+            norm=pickle.load(file)
+            for file in glob.glob(source_folder+"\\"+expList[exper]+"_*.csv"):
+                with open(file,newline='') as csvfile:
+                    rows = list(csv.reader(csvfile))
+                    reader=Reader(rows)
+                    if exper=='軌跡標示測驗':
+                        writer=Writer_Track(reader,norm)
+                    else:
+                        writer=Writer_Fluent(reader,norm)
+                    self.excel2doc(writer, file,dest_folder)
+                    i+=1
+                    pb["value"] = i
+                    root.update()
 
             
         messagebox.showinfo(root,"成功將所有 Excel 輸出成 pdf")
@@ -95,7 +97,8 @@ class Primary():
 
 
 class Writer_Track():
-    def __init__(self,reader):
+    def __init__(self,reader,norm):
+        self.norm=norm
         self.reader=reader
         self.doc = Document()
         self.doc.styles['Normal'].font.name = u'標楷體'
@@ -124,7 +127,7 @@ class Writer_Track():
         table = self.doc.add_table(rows = size[0], cols = size[1], style='TableGrid')
         for index, item in enumerate(context):
             for index2, item2 in enumerate(item):
-                if type(item2)==float:
+                if isinstance(item2,float):
                     table.cell(index,index2).text=f'{item2:.3f}'
                 else:
                     table.cell(index,index2).text=str(item2)
@@ -159,8 +162,22 @@ class Writer_Track():
     @staticmethod
     def getBasicMeasureI2(reader):
         return [reader.getData('Task1','Complete_Time'),reader.getData('Task2','Complete_Time'),reader.getData('Task3','Complete_Time'),reader.getData('Task4','Complete_Time'),reader.getData('Task5','Complete_Time')]
+    def getScaleAndPr(self,norm,data,reverse):
+        scale=[]
+        for index, column in enumerate(norm):
+            for item in column:
+                if (reverse and data[index]>=item[0]) or (not reverse and data[index]<=item):
+                    if data[index]==item[0]:
+                        scale.append(item[1:])
+                    else:
+                        pass
 
+        #print('\n\nscale: ',scale)
+
+        return scale
     def getBasicMeasure(self):
+        norm=self.norm['table2']
+
         self.add_paragraph('')
         self.add_title('軌跡標示測驗')
         self.add_paragraph('基本測量:')
@@ -169,8 +186,11 @@ class Writer_Track():
         i2=['原始\n分數']+Writer_Track.getBasicMeasureI2(reader)
         #,reader.getData('Task1','Complete_Time'),                           reader.getData('Task2','Complete_Time'),          reader.getData('Task3','Complete_Time'),        reader.getData('Task4','Complete_Time'),       reader.getData('Task5','Complete_Time')]
         print(i2)
-        i3=['量尺\n分數',newScore(i2[1], 20.5, 7.25, 10, 3),newScore(i2[2], 29.5, 11, 10, 3), newScore(i2[3], 29, 10, 10, 3),newScore(i2[4], 69, 28, 10, 3),newScore(i2[5], 31, 16, 10, 3)]
-        i4=['PR值',     prValue(i2[1], 20.5, 7.25),                 prValue(i2[2], 29.5, 11),prValue(i2[3], 29, 10),prValue(i2[4], 69, 28), prValue(i2[5], 31, 16)]
+        normData=self.getScaleAndPr(norm, i2[1:],reverse=True)
+        i3=['量尺\n分數']+[normData[0][0],normData[1][0],normData[2][0],normData[3][0],normData[4][0]]
+        #,newScore(i2[1], 20.5, 7.25, 10, 3),newScore(i2[2], 29.5, 11, 10, 3), newScore(i2[3], 29, 10, 10, 3),newScore(i2[4], 69, 28, 10, 3),newScore(i2[5], 31, 16, 10, 3)]
+        i4=['PR值']+[normData[0][1],normData[1][1],normData[2][1],normData[3][1],normData[4][1]]
+        #     prValue(i2[1], 20.5, 7.25),                 prValue(i2[2], 29.5, 11),prValue(i2[3], 29, 10),prValue(i2[4], 69, 28), prValue(i2[5], 31, 16)]
         self.tableList2=[i1,i2,i3,i4]
         self.add_table([4,6],self.tableList2)
     @staticmethod
