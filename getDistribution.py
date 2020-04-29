@@ -4,86 +4,48 @@ from scipy.stats import norm
 import copy
 import numpy as np
 import pickle
-class GetDistribution():
-    def __init__(self,path,Writer):
+class TableDistribution():
+    def __init__(self,path,Writer,backup,reverse,wayTogetData,source=None):
         self.path=path
         self.Writer=Writer
-    def buildNorm(self,Reader):
+        data=[]
+        rawData=None
+        if source==None:
+            self.getDataFromFile(Reader,data,wayTogetData)
+        else:
+            for file in source:
+                column=file[1]
+                self.addToNorm(wayTogetData(column),data)
+        if backup:
+            rawData=copy.deepcopy(data)
+        self.buildScaleTable(data,reverse)
+        # print('\n\nddddddata',data)
+        if backup:
+            for index, column in enumerate(rawData):
+                for itemIndex,item in enumerate(column):
+                    for distrib in data[index]:
+                        if distrib[0]==item:
+                            #print('replace', itemIndex)
+                            column[itemIndex]=distrib
+            #transpose rawData from column  to file 
+            # 
+            # print('\n\n\nrawData after replace',rawData)
+            rawData=np.array(rawData)
+            # print('\n\n\nrawData numpy',rawData)
+            rawData=rawData.transpose((1,2,0)).tolist()
+            # print('\n\n\nrawData transpose',rawData)
+        # print('\n\n\nrawData final',rawData)
+        self.data=data
+        self.rawData=rawData
+
+
+    def getDataFromFile(self,Reader,dest,wayTogetData):
         path=self.path
-        self.data={}
-        self.data['table2']=[]
-        self.data['table3']=[]
-        #self.files=[]
         for file in glob.glob(path):
             with open(file,newline='') as csvfile:
                 reader=Reader(list(csv.reader(csvfile)))
-                self.addToNorm(self.Writer.getBasicMeasureI2(reader),self.data['table2'])
-                #self.files.append(list(csv.reader(csvfile)))
-        print('raw data: ',self.data['table2'])
-        rawData=copy.deepcopy(self.data['table2'])
-        self.buildScaleTable(self.data['table2'],self.Writer.getNormReverse())
-        '''
-        for item in self.data['table2']:
-            item.sort(reverse=self.Writer.getNormReverse())
-            newItem=[]
-            for subItems in item:
-                cumulativePercentage=(item.index(subItems)+item.count(subItems))/len(item)
-                scaleScore=10+3*norm.ppf((item.index(subItems)+item.count(subItems))/len(item))
-                newItem.append((subItems,scaleScore,cumulativePercentage)) # get Cumulative percentage (0~1)
-            item.clear()
-            item.extend(newItem)
-        '''
-        
-        print('raw data in process:', rawData)
-        for index, column in enumerate(rawData):
-            for itemIndex,item in enumerate(column):
-                for distrib in self.data['table2'][index]:
-                    if distrib[0]==item:
-                        column[itemIndex]=distrib
-        rawData=np.array(rawData)
-        rawData=rawData.transpose((1,2,0)).tolist()
-        # print('\n\nnew raw data: ',rawData)
-        # print('len',len(rawData))
-        for file in rawData:
-            column=file[1]
-            self.addToNorm(self.Writer.getMoreMeasureI2(column),self.data['table3'])
+                self.addToNorm(wayTogetData(reader),dest)
 
-        self.buildScaleTable(self.data['table3'],False)
-        print('table3', self.data['table3'])
-        print('\n\ntable2: ',self.data['table2'])
-        file=open('norm.pickle','wb')
-        pickle.dump(self.data,file)
-        file.close()
-        '''
-        #perFile=[]
-        i=0
-        while i<len(rawData[0]):
-            #perFile.append([rawData[0][i],rawData[1],rawData[2],rawData[3]])
-            
-            self.addToNorm([rawData[1][i][1]+rawData[2][i][1],
-            rawData[0][i][1]-rawData[1][i][1], 
-            rawData[3][i][1]-rawData[1][i][1],
-            rawData[3][i][1]-rawData[2][i][1],
-            rawData[3][i][1]-rawData[1][i][1]-rawData[2][i][1],
-            rawData[3][i][1]-rawData[4][i][1]
-            ], self.data['table3']) #rawData first is column, second is item, third is scale score
-            #print('rawData[3][i][1]',rawData[3][i][1])
-            #print('rawData[3][i][1]',rawData[3][i][2])
-            i+=1
-        print('\n\n table3: ',self.data['table3'])
-        
-        
-        print('')
-        print('table2[0] len: ',len(self.data['table2'][0]))
-
-            
-
-
-        print('table2 len: ',len(self.data['table2']))
-        
-        print(self.data['table2'])
-        print(rawData)
-        '''
     def buildScaleTable(self,source,reverse):
         for item in source:
             item.sort(reverse=reverse)
@@ -94,8 +56,12 @@ class GetDistribution():
                     cumulativePercentage=0.99
                 scaleScore=10+3*norm.ppf(cumulativePercentage)
                 pr=int(cumulativePercentage*100)
-
-                newItem.append((subItems,scaleScore,pr,cumulativePercentage)) # get Cumulative percentage (0~1)
+                newItem.append((subItems,scaleScore,pr,cumulativePercentage)) # get Cumulative percentage (0~10.99)
+            
+            print('len new item', len(newItem))
+            newItem=list(set(newItem))
+            print('len new item after set:', len(newItem))
+            newItem.sort(reverse=reverse)
             item.clear()
             item.extend(newItem)
     def addToNorm(self,source,dest):
@@ -104,27 +70,31 @@ class GetDistribution():
         if not dest:
             source=[[item] for item in source]
             dest.extend(source)
-            print(dest)
-            print('')
+            # print(dest)
+            # print('')
         else:
             #print('else')
             i=0
             while i<len(source):
                 dest[i].append(source[i])
                 i+=1
-            
-            #self.addSingleTable(dest,source)
-        
 
 
+class GetDistribution():
+    def __init__(self):
+        table2=TableDistribution(r"E:\執行功能output3\EFs_dta\dta_csv集合\TMTest_*.csv",Writer_Track,backup=True, wayTogetData=Writer_Track.getBasicMeasureI2 ,reverse=Writer_Track.getNormReverse())
+        data={}
+        data['table2']=table2.data
+        print('table2 raw data: ',table2.rawData)
+        print('\n\ntable2 data', table2.data)
+        table3=TableDistribution(r"E:\執行功能output3\EFs_dta\dta_csv集合\TMTest_*.csv",Writer_Track,backup=False,source=table2.rawData, wayTogetData=Writer_Track.getMoreMeasureI2 ,reverse=False)
+        print('table3 raw data: ',table3.rawData)
+        print('\n\ntable3 data', table3.data)
+        data['table3']=table3.data
+        file=open('norm.pickle','wb')
+        pickle.dump(data,file)
+        file.close()
 
-    #def addSingleTable(self,table,tabledata):
-        # i=0
-        # while i<len(tabledata):
-        #     table[i].append(tabledata[i])
-        #     i+=1
-
-        
 
 
 
@@ -135,7 +105,4 @@ class GetDistribution():
 
 
 if __name__=='__main__':
-    dist=GetDistribution(r"E:\執行功能output3\EFs_dta\dta_csv集合\TMTest_*.csv",Writer_Track)
-    #dist=GetDistribution(r"E:\執行功能output3\EFs_dta\dta_csv集合\DFTest_*.csv",Writer_Fluent)
-    reader=Reader
-    dist.buildNorm(Reader)
+    track1=GetDistribution()

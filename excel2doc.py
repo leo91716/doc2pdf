@@ -165,14 +165,17 @@ class Writer_Track():
     def getScaleAndPr(self,norm,data,reverse):
         scale=[]
         for index, column in enumerate(norm):
-            for item in column:
-                if (reverse and data[index]>=item[0]) or (not reverse and data[index]<=item):
+            for itemIndex,item in enumerate(column):
+                if (reverse and data[index]>=item[0]) or (not reverse and data[index]<=item[0]):
                     if data[index]==item[0]:
                         scale.append(item[1:])
                     else:
                         pass
+                    break
+                elif itemIndex==len(column)-1: #if you didn't catch anything
+                    pass
 
-        #print('\n\nscale: ',scale)
+        # print('\n\nscale: ',scale)
 
         return scale
     def getBasicMeasure(self):
@@ -198,12 +201,16 @@ class Writer_Track():
         return [table2[1]+table2[2],   table2[0]-table2[1],        table2[3]-table2[1],      table2[3]-table2[2],       table2[3]-table2[1]-table2[2],                table2[3]-table2[4]]
     def getMoreMeasure(self):
         ##table3
+        norm=self.norm['table3']
         table2=self.tableList2[2][1:]
         i1=['',         '圓形序列＋六邊形序列',            '圓形六邊形轉換 - 視覺掃描',    '圓形六邊形轉換 - 圓形序列','圓形六邊形轉換 - 六邊形序列','圓形六邊形轉換- 圓形序列＋六邊形序列','圓形六邊形轉換 - 動作速度']
         i2=['計分\n結果']+Writer_Track.getMoreMeasureI2(table2)
+        normData=self.getScaleAndPr(norm, i2[1:],reverse=False)
         # [table2[2]+table2[3],   table2[1]-table2[2],        table2[4]-table2[2],      table2[4]-table2[3],       table2[4]-table2[2]-table2[3],                table2[4]-table2[5]]
-        i3=['量尺\n分數',newScore(i2[1], 19.5, 5.25, 10, 3), newScore(i2[2], 0, 3.75, 10, 3),newScore(i2[3], 0, 3, 10, 3), newScore(i2[4], 0, 3, 10, 3),    newScore(i2[5], 0, 3, 10, 3),  newScore(i2[6], 0, 3, 10, 3)]
-        i4=['PR值',      prValue(i2[1], 19.5, 5.25),prValue(i2[2], 0, 3.75),prValue(i2[3], 0, 3), prValue(i2[4], 0, 3),  prValue(i2[5], 0, 3),           prValue(i2[6], 0, 3)]
+        i3=['量尺\n分數']+[normData[0][0],normData[1][0],normData[2][0],normData[3][0],normData[4][0],normData[5][0]]
+        #,newScore(i2[1], 19.5, 5.25, 10, 3), newScore(i2[2], 0, 3.75, 10, 3),newScore(i2[3], 0, 3, 10, 3), newScore(i2[4], 0, 3, 10, 3),    newScore(i2[5], 0, 3, 10, 3),  newScore(i2[6], 0, 3, 10, 3)]
+        i4=['PR值']+[normData[0][1],normData[1][1],normData[2][1],normData[3][1],normData[4][1],normData[5][1]]
+        # ,     prValue(i2[1], 19.5, 5.25),prValue(i2[2], 0, 3.75),prValue(i2[3], 0, 3), prValue(i2[4], 0, 3),  prValue(i2[5], 0, 3),           prValue(i2[6], 0, 3)]
         tableList3=[i1,i2,i3,i4]
         self.add_paragraph('')
         self.add_paragraph('衍生測量:')
