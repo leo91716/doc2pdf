@@ -49,6 +49,8 @@ class TableDistribution():
                     cumulativePercentage=0.99
                 scaleScore=10+3*norm.ppf(cumulativePercentage)
                 pr=int(cumulativePercentage*100)
+                if pr==0:
+                    pr=1
                 newItem.append((subItems,scaleScore,pr,cumulativePercentage)) # get Cumulative percentage (0~0.99)
             
             print('len new item', len(newItem))
@@ -110,5 +112,5 @@ class GetDistribution():
 
 
 if __name__=='__main__':
-    #track1=GetDistribution(Writer_Track,'TMTest')
-    track1=GetDistribution(Writer_Fluent,'DFTest')
+    track1=GetDistribution(Writer_Track,'TMTest')
+    #track1=GetDistribution(Writer_Fluent,'DFTest')

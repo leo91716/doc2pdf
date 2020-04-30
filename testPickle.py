@@ -1,7 +1,7 @@
 import pickle
 import sys
 
-# python gtestPickle.py DFTest
+# python testPickle.py DFTest
 
 with open(sys.argv[1]+'_norm.pickle', 'rb') as file:
     norm=pickle.load(file)
@@ -24,4 +24,5 @@ with open(sys.argv[1]+'_norm.pickle', 'rb') as file:
 for key in norm:
     for index,item in enumerate(norm[key]):
         print(f'\n\nnorm[{key}][{index}]',item)
+        print('type',type(item[0][1]))
 
