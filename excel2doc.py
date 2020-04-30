@@ -16,6 +16,7 @@ import traceback
 import csv
 from tkinter.ttk import Combobox
 import pickle
+import numpy as np
 
 def callback_error(*args):
     # Build the error message
@@ -52,7 +53,7 @@ class Primary():
             messagebox.showwarning(root," \n 失敗: 找不到要讀的檔案")
             exit()
         pb["maximum"] = len(glob.glob(source_folder+"\\"+expList[exper]+"_*.csv"))
-        with open('norm.pickle', 'rb') as file:
+        with open(expList[exper]+'_norm.pickle', 'rb') as file:
             norm=pickle.load(file)
             for file in glob.glob(source_folder+"\\"+expList[exper]+"_*.csv"):
                 with open(file,newline='') as csvfile:
@@ -162,8 +163,9 @@ class Writer_Track():
     @staticmethod
     def getBasicMeasureI2(reader):
         return [reader.getData('Task1','Complete_Time'),reader.getData('Task2','Complete_Time'),reader.getData('Task3','Complete_Time'),reader.getData('Task4','Complete_Time'),reader.getData('Task5','Complete_Time')]
-    def getScaleAndPr(self,norm,data,reverse):
+    def getScaleAndPr(self,table,data,reverse):
         scale=[]
+        norm=self.norm[table]
         for index, column in enumerate(norm):
             for itemIndex,item in enumerate(column):
                 if (reverse and data[index]>=item[0]) or (not reverse and data[index]<=item[0]):
@@ -176,10 +178,14 @@ class Writer_Track():
                     pass
 
         # print('\n\nscale: ',scale)
+        scale=np.array(scale)
+        scale=scale.transpose().tolist()
+        scale[1]=list(map(int,scale[1]))
+
 
         return scale
     def getBasicMeasure(self):
-        norm=self.norm['table2']
+        # norm=self.norm['table2']
 
         self.add_paragraph('')
         self.add_title('軌跡標示測驗')
@@ -189,10 +195,11 @@ class Writer_Track():
         i2=['原始\n分數']+Writer_Track.getBasicMeasureI2(reader)
         #,reader.getData('Task1','Complete_Time'),                           reader.getData('Task2','Complete_Time'),          reader.getData('Task3','Complete_Time'),        reader.getData('Task4','Complete_Time'),       reader.getData('Task5','Complete_Time')]
         print(i2)
-        normData=self.getScaleAndPr(norm, i2[1:],reverse=True)
-        i3=['量尺\n分數']+[normData[0][0],normData[1][0],normData[2][0],normData[3][0],normData[4][0]]
+        # normData=self.getScaleAndPr('table2', i2[1:],reverse=self.getNormReverse())
+        i3=['量尺\n分數']+self.getScaleAndPr('table2', i2[1:],reverse=self.getNormReverse())[0]
         #,newScore(i2[1], 20.5, 7.25, 10, 3),newScore(i2[2], 29.5, 11, 10, 3), newScore(i2[3], 29, 10, 10, 3),newScore(i2[4], 69, 28, 10, 3),newScore(i2[5], 31, 16, 10, 3)]
-        i4=['PR值']+[normData[0][1],normData[1][1],normData[2][1],normData[3][1],normData[4][1]]
+        i4=['PR值']+self.getScaleAndPr('table2', i2[1:],reverse=self.getNormReverse())[1]
+        #+[normData[0][1],normData[1][1],normData[2][1],normData[3][1],normData[4][1]]
         #     prValue(i2[1], 20.5, 7.25),                 prValue(i2[2], 29.5, 11),prValue(i2[3], 29, 10),prValue(i2[4], 69, 28), prValue(i2[5], 31, 16)]
         self.tableList2=[i1,i2,i3,i4]
         self.add_table([4,6],self.tableList2)
@@ -201,15 +208,15 @@ class Writer_Track():
         return [table2[1]+table2[2],   table2[0]-table2[1],        table2[3]-table2[1],      table2[3]-table2[2],       table2[3]-table2[1]-table2[2],                table2[3]-table2[4]]
     def getMoreMeasure(self):
         ##table3
-        norm=self.norm['table3']
+        # norm=self.norm['table3']
         table2=self.tableList2[2][1:]
         i1=['',         '圓形序列＋六邊形序列',            '圓形六邊形轉換 - 視覺掃描',    '圓形六邊形轉換 - 圓形序列','圓形六邊形轉換 - 六邊形序列','圓形六邊形轉換- 圓形序列＋六邊形序列','圓形六邊形轉換 - 動作速度']
         i2=['計分\n結果']+Writer_Track.getMoreMeasureI2(table2)
-        normData=self.getScaleAndPr(norm, i2[1:],reverse=False)
+        # normData=self.getScaleAndPr(norm, i2[1:],reverse=False)
         # [table2[2]+table2[3],   table2[1]-table2[2],        table2[4]-table2[2],      table2[4]-table2[3],       table2[4]-table2[2]-table2[3],                table2[4]-table2[5]]
-        i3=['量尺\n分數']+[normData[0][0],normData[1][0],normData[2][0],normData[3][0],normData[4][0],normData[5][0]]
+        i3=['量尺\n分數']+self.getScaleAndPr('table3', i2[1:],reverse=False)[0]
         #,newScore(i2[1], 19.5, 5.25, 10, 3), newScore(i2[2], 0, 3.75, 10, 3),newScore(i2[3], 0, 3, 10, 3), newScore(i2[4], 0, 3, 10, 3),    newScore(i2[5], 0, 3, 10, 3),  newScore(i2[6], 0, 3, 10, 3)]
-        i4=['PR值']+[normData[0][1],normData[1][1],normData[2][1],normData[3][1],normData[4][1],normData[5][1]]
+        i4=['PR值']+self.getScaleAndPr('table3', i2[1:],reverse=False)[1]
         # ,     prValue(i2[1], 19.5, 5.25),prValue(i2[2], 0, 3.75),prValue(i2[3], 0, 3), prValue(i2[4], 0, 3),  prValue(i2[5], 0, 3),           prValue(i2[6], 0, 3)]
         tableList3=[i1,i2,i3,i4]
         self.add_paragraph('')
@@ -254,14 +261,19 @@ class Writer_Fluent(Writer_Track):  #newScore(data, mean,std, new_mean, new_std)
         self.add_paragraph('')
         self.add_title('設計流暢性測驗')
         self.add_paragraph('基本測量:')
+        # norm=self.norm['table2']
         reader=self.reader
         #getDataArg=('Examing','Total_CorrectDesign',False)
         i0=['','總正確數']
         i1=['',         '情境1\n黑點相連',                                '情境2\n白點相連',             '情境3 黑點和白點互相轉換','設計流暢性\n總和']
         i2=['原始分數']+Writer_Fluent.getBasicMeasureI2(reader)
-        i3=['量尺\n分數',newScore(i2[1], 10, 3.75, 10, 3),newScore(i2[2], 11, 4, 10, 3), newScore(i2[3], 8, 3, 10, 3),newScore(i2[4], 29, 7.5, 10, 3)]
-        #i4=['PR值',     prValue(i2[1], 20.5, 7.25),                 prValue(i2[2], 29.5, 11),prValue(i2[3], 29, 10),prValue(i2[4], 69, 28), prValue(i2[5], 31, 16)]
-        self.tableList2=[i0,i1,i2,i3]
+        # normData=self.getScaleAndPr(norm, i2[1:],reverse=self.getNormReverse())
+        i3=['量尺\n分數']+self.getScaleAndPr('table2', i2[1:],reverse=self.getNormReverse())[0]
+        #+[normData[0][0],normData[1][0],normData[2][0]]
+        #,newScore(i2[1], 10, 3.75, 10, 3),newScore(i2[2], 11, 4, 10, 3), newScore(i2[3], 8, 3, 10, 3),newScore(i2[4], 29, 7.5, 10, 3)]
+        i4=['PR值']+self.getScaleAndPr('table2', i2[1:],reverse=self.getNormReverse())[1]
+        #,     prValue(i2[1], 20.5, 7.25),                 prValue(i2[2], 29.5, 11),prValue(i2[3], 29, 10),prValue(i2[4], 69, 28), prValue(i2[5], 31, 16)]
+        self.tableList2=[i0,i1,i2,i3,i4]
         merge=[(0,1),(0,4)]
         self.add_table([5,5],self.tableList2,merge)
     @staticmethod
@@ -272,32 +284,43 @@ class Writer_Fluent(Writer_Track):  #newScore(data, mean,std, new_mean, new_std)
         i1=['',         '實心點連結＋空心點連結\n組合總正確數','轉換 - 實心點連結＋空心點連結']
         i2=['計分結果']+Writer_Fluent.getMoreMeasureI2(table2)
         #,table2[1]+table2[2],   table2[3]-table2[1]-table2[2]]
-        i3=['量尺分數',newScore(i2[1], 19.5, 6, 10, 3), newScore(i2[2], 0, 3, 10, 3)]
-        i4=['PR值']
+        i3=['量尺分數']+self.getScaleAndPr('table3', i2[1:],reverse=False)[0]
+        #,newScore(i2[1], 19.5, 6, 10, 3), newScore(i2[2], 0, 3, 10, 3)]
+        i4=['PR值']+self.getScaleAndPr('table3', i2[1:],reverse=False)[1]
         tableList3=[i1,i2,i3,i4]
         self.add_paragraph('')
         self.add_paragraph('衍生測量:')
         self.add_table([4,3],tableList3)
+    @staticmethod
+    def  getOptionalTableI2(reader):
+        getData=reader.getData
+        getDataArg1=['Examing','Total_UnCorrectDesign',False]
+        getDataArg2=['Examing','Total_RepeatDesign',False]
+        getDataArg3=['Examing','Total_TryDesign',False]
+        return [getData(*getDataArg1,'情境1_黑點相連')+getData(*getDataArg1,'情境2_白點相連')+getData(*getDataArg1,'情境3_黑點和白點互相轉換'),
+        getData(*getDataArg2,'情境1_黑點相連')+getData(*getDataArg2,'情境2_白點相連')+getData(*getDataArg2,'情境3_黑點和白點互相轉換'),
+        getData(*getDataArg3,'情境1_黑點相連')+getData(*getDataArg3,'情境2_白點相連')+getData(*getDataArg3,'情境3_黑點和白點互相轉換')]
 
     def getOptionalTable(self): #getData(self, task,item,thousand=True,doubleCheck=None)
         self.add_paragraph('')
         self.add_paragraph('選擇性測量')
-        getData=self.reader.getData
+        # getData=self.reader.getData
         table2=self.tableList2[2]
-        getDataArg1=['Examing','Total_UnCorrectDesign',False]
-        getDataArg2=['Examing','Total_RepeatDesign',False]
-        getDataArg3=['Examing','Total_TryDesign',False]
+        # getDataArg1=['Examing','Total_UnCorrectDesign',False]
+        # getDataArg2=['Examing','Total_RepeatDesign',False]
+        # getDataArg3=['Examing','Total_TryDesign',False]
         ##table4
         
         i1=['',        '不正確設計數','重複設計','嘗試設計總數','正確設計\n百分比']
 
-        i2=['原始總分',getData(*getDataArg1,'情境1_黑點相連')+getData(*getDataArg1,'情境2_白點相連')+getData(*getDataArg1,'情境3_黑點和白點互相轉換'),
-        getData(*getDataArg2,'情境1_黑點相連')+getData(*getDataArg2,'情境2_白點相連')+getData(*getDataArg2,'情境3_黑點和白點互相轉換'),
-        getData(*getDataArg3,'情境1_黑點相連')+getData(*getDataArg3,'情境2_白點相連')+getData(*getDataArg3,'情境3_黑點和白點互相轉換')]
+        i2=['原始總分']+Writer_Fluent.getOptionalTableI2(self.reader)
+        # ,getData(*getDataArg1,'情境1_黑點相連')+getData(*getDataArg1,'情境2_白點相連')+getData(*getDataArg1,'情境3_黑點和白點互相轉換'),
+        # getData(*getDataArg2,'情境1_黑點相連')+getData(*getDataArg2,'情境2_白點相連')+getData(*getDataArg2,'情境3_黑點和白點互相轉換'),
+        # getData(*getDataArg3,'情境1_黑點相連')+getData(*getDataArg3,'情境2_白點相連')+getData(*getDataArg3,'情境3_黑點和白點互相轉換')]
         i2End=[table2[4]/i2[3]]
         i2=i2+i2End
-        i3=['量尺分數']
-        i4=['PR值']
+        i3=['量尺分數']+self.getScaleAndPr('table4', i2[1:],reverse=self.getNormReverse())[0]
+        i4=['PR值']+self.getScaleAndPr('table4', i2[1:],reverse=self.getNormReverse())[1]
         tableList4=[i1,i2,i3,i4]
         self.add_table([4,5],tableList4)
 
