@@ -1,7 +1,7 @@
 import pickle
 import sys
 
-# print(sys.argv[1])
+# python gtestPickle.py DFTest
 
 with open(sys.argv[1]+'_norm.pickle', 'rb') as file:
     norm=pickle.load(file)

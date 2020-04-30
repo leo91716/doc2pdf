@@ -79,7 +79,7 @@ class GetDistribution():
         table2=TableDistribution(r"E:\執行功能output3\EFs_dta\dta_csv集合/"+name+"_*.csv",Writer,backup=True, wayTogetData=Writer.getBasicMeasureI2 ,reverse=Writer.getNormReverse())
         i=2
         data['table'+str(i)]=table2.data
-        # print('table2 raw data: ',table2.rawData)
+        print('table2 raw data: ',table2.rawData)
         # print('\n\ntable2 data', table2.data)
         table3=TableDistribution(r"E:\執行功能output3\EFs_dta\dta_csv集合/"+name+"_*.csv",Writer,backup=False,source=table2.rawData, wayTogetData=Writer.getMoreMeasureI2 ,reverse=False)
         # print('table3 raw data: ',table3.rawData)
