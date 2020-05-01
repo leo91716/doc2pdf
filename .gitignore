@@ -4,3 +4,4 @@ pdf/
 test/
 *.exe
 excel2word/
+__pycache__/

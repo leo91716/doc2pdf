@@ -9,32 +9,40 @@ class TableDistribution():
         self.norm=[]
         self.withData=[]
         self.withScale=[]
+    def transpose(self,data,change=(1,0)):
+        data=np.array(data)
+        return data.transpose(change).tolist()
     def create(self,path,Writer,backup,reverse,wayTogetData,source=None):
         self.path=path
         self.Writer=Writer
         print('source:',source)
         data=[]
         rawData=[]
+        # if type(source)==list:
+        #     self.transpose(source,(1,0,2))
         if source==None:
             self.getDataFromFile(Reader,data,wayTogetData)
         else:
             for file in source:
-                column=file[1]
-                self.addToNorm(wayTogetData(column),data)
+                self.addToNorm(wayTogetData(file[1]),data)
         withData=copy.deepcopy(data)
+        withData=self.transpose(withData)
         self.withData.extend(withData)
         print('just read data', data)
         if backup:
             rawData=copy.deepcopy(data)
+        
         self.buildScaleTable(data,reverse)
+
         if backup:
             for index, column in enumerate(rawData):
                 for itemIndex,item in enumerate(column):
                     for distrib in data[index]:
                         if distrib[0]==item:
                             column[itemIndex]=distrib
-            rawData=np.array(rawData)
-            rawData=rawData.transpose((1,2,0)).tolist()
+            rawData=self.transpose(rawData,(2,1,0))
+            # rawData=np.array(rawData)
+            # rawData=rawData.transpose((1,2,0)).tolist()
         self.norm=data
         self.withScale.extend(rawData)
 
@@ -86,7 +94,7 @@ class GetDistribution():
     def __init__(self,Writer,name):
         path=r"E:\執行功能output3\EFs_dta\dta_csv集合/"
         #path,Writer,backup,reverse,wayTogetData,source=None)
-        tableNumber={'TMTest':2,'DFTest':3}
+        tableNumber={'TMTest':2,'DFTest':4}
         tableList=[]
         for i in range(tableNumber[name]):
             tableList.append(TableDistribution())
@@ -97,7 +105,7 @@ class GetDistribution():
         'DFTest':[{'path':path+name+"_*.csv",'Writer':Writer,'backup':True, 'wayTogetData':Writer.getBasicMeasureI2 ,'reverse':Writer.getNormReverse()},
                 {'path':path+name+"_*.csv",'Writer':Writer,'backup':False,'source':tableList[0].withScale, 'wayTogetData':Writer.getMoreMeasureI2 ,'reverse':False},
                 {'path':path+name+"_*.csv",'Writer':Writer,'backup':False, 'wayTogetData':Writer.getOptionalTableI2 ,'reverse':False},
-                # {'path':path+name+"_*.csv",'Writer':Writer,'backup':False, 'wayTogetData':Writer_Fluent.getOptionalTableI2End,source= ,'reverse':False},
+                # {'path':path+name+"_*.csv",'Writer':Writer,'backup':False, 'wayTogetData':Writer.getOptionalTableI2End,'source':[[tableList[0],0],tableList[1]] ,'reverse':False},
             ],
         
         }

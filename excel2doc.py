@@ -301,7 +301,7 @@ class Writer_Fluent(Writer_Track):  #newScore(data, mean,std, new_mean, new_std)
         i1=['',        '不正確設計數','重複設計','嘗試設計總數','正確設計\n百分比']
 
         i2=['原始總分']+Writer_Fluent.getOptionalTableI2(self.reader)
-        i2End=Writer_Fluent.getOptionalTableI2End(table2,i2)
+        i2End=self.getOptionalTableI2End(table2,i2)
         i2=i2+i2End
         i3=['量尺分數']+self.getScaleAndPr('table4', i2[1:],reverse=self.getNormReverse())[0]
         i4=['PR值']+self.getScaleAndPr('table4', i2[1:],reverse=self.getNormReverse())[1]
