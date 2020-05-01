@@ -5,17 +5,24 @@ import copy
 import numpy as np
 import pickle
 class TableDistribution():
-    def __init__(self,path,Writer,backup,reverse,wayTogetData,source=None):
+    def __init__(self):
+        self.norm=[]
+        self.withData=[]
+        self.withScale=[]
+    def create(self,path,Writer,backup,reverse,wayTogetData,source=None):
         self.path=path
         self.Writer=Writer
+        print('source:',source)
         data=[]
-        rawData=None
+        rawData=[]
         if source==None:
             self.getDataFromFile(Reader,data,wayTogetData)
         else:
             for file in source:
                 column=file[1]
                 self.addToNorm(wayTogetData(column),data)
+        withData=copy.deepcopy(data)
+        self.withData.extend(withData)
         print('just read data', data)
         if backup:
             rawData=copy.deepcopy(data)
@@ -28,8 +35,8 @@ class TableDistribution():
                             column[itemIndex]=distrib
             rawData=np.array(rawData)
             rawData=rawData.transpose((1,2,0)).tolist()
-        self.data=data
-        self.rawData=rawData
+        self.norm=data
+        self.withScale.extend(rawData)
 
 
     def getDataFromFile(self,Reader,dest,wayTogetData):
@@ -77,7 +84,42 @@ class TableDistribution():
 
 class GetDistribution():
     def __init__(self,Writer,name):
+        path=r"E:\執行功能output3\EFs_dta\dta_csv集合/"
+        #path,Writer,backup,reverse,wayTogetData,source=None)
+        tableNumber={'TMTest':2,'DFTest':3}
+        tableList=[]
+        for i in range(tableNumber[name]):
+            tableList.append(TableDistribution())
+        tableArgList={
+        'TMTest':[{'path':path+name+"_*.csv",'Writer':Writer,'backup':True, 'wayTogetData':Writer.getBasicMeasureI2 ,'reverse':Writer.getNormReverse()},
+                {'path':path+name+"_*.csv",'Writer':Writer,'backup':False,'source':tableList[0].withScale, 'wayTogetData':Writer.getMoreMeasureI2 ,'reverse':False}
+            ],
+        'DFTest':[{'path':path+name+"_*.csv",'Writer':Writer,'backup':True, 'wayTogetData':Writer.getBasicMeasureI2 ,'reverse':Writer.getNormReverse()},
+                {'path':path+name+"_*.csv",'Writer':Writer,'backup':False,'source':tableList[0].withScale, 'wayTogetData':Writer.getMoreMeasureI2 ,'reverse':False},
+                {'path':path+name+"_*.csv",'Writer':Writer,'backup':False, 'wayTogetData':Writer.getOptionalTableI2 ,'reverse':False},
+                # {'path':path+name+"_*.csv",'Writer':Writer,'backup':False, 'wayTogetData':Writer_Fluent.getOptionalTableI2End,source= ,'reverse':False},
+            ],
+        
+        }
         data={}
+        for index,arg in enumerate(tableArgList[name]):
+            print('ttttable',index)
+            tableList[index].create(**arg)
+            data['table'+str(index)]=tableList[index].norm
+            print('tableList[index].withScale',tableList[index].withScale)
+            print('tableList[index].withData',tableList[index].withData)
+            print('tableList[index].norm',tableList[index].norm)
+            # print('table.rawData',tableList[index].rawData)
+
+        
+        file=open(name+'_norm.pickle','wb')
+        pickle.dump(data,file)
+        file.close()
+
+        '''
+        data={}
+
+
         table2=TableDistribution(r"E:\執行功能output3\EFs_dta\dta_csv集合/"+name+"_*.csv",Writer,backup=True, wayTogetData=Writer.getBasicMeasureI2 ,reverse=Writer.getNormReverse())
         i=2
         data['table'+str(i)]=table2.data
@@ -89,19 +131,20 @@ class GetDistribution():
         i+=1
         data['table'+str(i)]=table3.data
         if name=='DFTest':
-            table4=TableDistribution(r"E:\執行功能output3\EFs_dta\dta_csv集合/"+name+"_*.csv",Writer,backup=False, wayTogetData=Writer.getOptionalTableI2 ,reverse=False)
-            # print('table3 raw data: ',table3.rawData)
-            # print('\n\ntable3 data', table3.data)
+            table4_1=TableDistribution(r"E:\執行功能output3\EFs_dta\dta_csv集合/"+name+"_*.csv",Writer,backup=True, wayTogetData=Writer.getOptionalTableI2 ,reverse=False)
             print('enter table4')
-            i+=1
-            data['table'+str(i)]=table4.data
-            # print('data[table4]',data['table4'])
+            print('\n\ntable4_1.data',table4_1.data)
+            print('\n\ntable4_1.rawData',table4_1.rawData)
+            #table4_2=TableDistribution(r"E:\執行功能output3\EFs_dta\dta_csv集合/"+name+"_*.csv",Writer,backup=False, wayTogetData=Writer_Fluent.getOptionalTableI2End,source= ,reverse=False)
 
+            i+=1
+            data['table'+str(i)]=table4_1.data
+        
 
         file=open(name+'_norm.pickle','wb')
         pickle.dump(data,file)
         file.close()
-
+        '''
 
 
 
@@ -112,5 +155,5 @@ class GetDistribution():
 
 
 if __name__=='__main__':
-    track1=GetDistribution(Writer_Track,'TMTest')
-    #track1=GetDistribution(Writer_Fluent,'DFTest')
+    #track1=GetDistribution(Writer_Track,'TMTest')
+    track1=GetDistribution(Writer_Fluent,'DFTest')

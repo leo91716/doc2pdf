@@ -292,6 +292,8 @@ class Writer_Fluent(Writer_Track):  #newScore(data, mean,std, new_mean, new_std)
         getData(*getDataArg2,'情境1_黑點相連')+getData(*getDataArg2,'情境2_白點相連')+getData(*getDataArg2,'情境3_黑點和白點互相轉換'),
         getData(*getDataArg3,'情境1_黑點相連')+getData(*getDataArg3,'情境2_白點相連')+getData(*getDataArg3,'情境3_黑點和白點互相轉換')]
 
+    def getOptionalTableI2End(table2,i2):
+        return [table2[4]/i2[3]]
     def getOptionalTable(self): #getData(self, task,item,thousand=True,doubleCheck=None)
         self.add_paragraph('')
         self.add_paragraph('選擇性測量')
@@ -299,7 +301,7 @@ class Writer_Fluent(Writer_Track):  #newScore(data, mean,std, new_mean, new_std)
         i1=['',        '不正確設計數','重複設計','嘗試設計總數','正確設計\n百分比']
 
         i2=['原始總分']+Writer_Fluent.getOptionalTableI2(self.reader)
-        i2End=[table2[4]/i2[3]]
+        i2End=Writer_Fluent.getOptionalTableI2End(table2,i2)
         i2=i2+i2End
         i3=['量尺分數']+self.getScaleAndPr('table4', i2[1:],reverse=self.getNormReverse())[0]
         i4=['PR值']+self.getScaleAndPr('table4', i2[1:],reverse=self.getNormReverse())[1]
