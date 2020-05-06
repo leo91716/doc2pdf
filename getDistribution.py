@@ -5,24 +5,30 @@ import copy
 import numpy as np
 import pickle
 class TableDistribution():
-    def __init__(self,path,Writer,backup,reverse,wayTogetData,source=None):
+    def __init__(self,path,Writer,backup,reverse,wayTogetData,source=[None]):
+        # if source==None:
+        #     source=[csvData]
         self.path=path
         self.Writer=Writer
         data=[]
         rawData=None
-        if source==None:
-            self.getDataFromFile(Reader,data,wayTogetData)
-        else:
-            i=0
-            while i < len(source[0]):
-                arg=[]
-                for way in source:
+        # if source==None:
+        #     self.getDataFromFile(Reader,data,wayTogetData)
+        # else:
+        i=0
+        while i < len(glob.glob(self.path)):
+            arg=[]
+            for way in source:
+                if way==None:
+                    with open(glob.glob(self.path)[i],newline='') as csvfile:
+                        reader=Reader(list(csv.reader(csvfile)))
+                        arg.append(reader)
+                else:
                     arg.append(way[i])
-                self.addToNorm(wayTogetData(*arg),data)
-                i+=1
+            print('arg',arg)
+            self.addToNorm(wayTogetData(*arg),data)
+            i+=1
 
-            # for file in source:
-            #     self.addToNorm(wayTogetData(file),data)
         print('just read data', data)
         if backup:
             rawData=copy.deepcopy(data)
@@ -38,14 +44,14 @@ class TableDistribution():
         self.data=data
         self.rawData=rawData
 
-
+    '''
     def getDataFromFile(self,Reader,dest,wayTogetData):
         path=self.path
         for file in glob.glob(path):
             with open(file,newline='') as csvfile:
                 reader=Reader(list(csv.reader(csvfile)))
                 self.addToNorm(wayTogetData(reader),dest)
-
+    '''
     def buildScaleTable(self,source,reverse):
         for index,item in enumerate(source):
             item.sort(reverse=reverse[index])
@@ -84,6 +90,14 @@ class TableDistribution():
 
 class GetDistribution():
     def __init__(self,Writer,name):
+        '''
+        path=r"E:\執行功能output3\EFs_dta\dta_csv集合/"+name+"_*.csv"
+        csvData=[]
+        for file in glob.glob(path):
+            with open(file,newline='') as csvfile:
+                csvData.append(list(csv.reader(csvfile)))
+                # reader=Reader(list(csv.reader(csvfile)))
+        '''
         data={}
         table2=TableDistribution(r"E:\執行功能output3\EFs_dta\dta_csv集合/"+name+"_*.csv",Writer,backup=True, wayTogetData=Writer.getBasicMeasureI2 ,reverse=Writer.getNormReverse()[0])
         i=2
@@ -93,7 +107,7 @@ class GetDistribution():
         i+=1
         data['table'+str(i)]=table3.data
         if name=='DFTest':
-            table4=TableDistribution(r"E:\執行功能output3\EFs_dta\dta_csv集合/"+name+"_*.csv",Writer,backup=False, wayTogetData=Writer.getOptionalTableI2 ,reverse=Writer.getNormReverse()[2])
+            table4=TableDistribution(r"E:\執行功能output3\EFs_dta\dta_csv集合/"+name+"_*.csv",Writer,backup=False, wayTogetData=Writer.getOptionalTableI2,source=[None,table2.rawData] ,reverse=Writer.getNormReverse()[2])
             print('enter table4')
             i+=1
             data['table'+str(i)]=table4.data
@@ -113,5 +127,5 @@ class GetDistribution():
 
 
 if __name__=='__main__':
-    track1=GetDistribution(Writer_Track,'TMTest')
-    #track1=GetDistribution(Writer_Fluent,'DFTest')
+    #track1=GetDistribution(Writer_Track,'TMTest')
+    track1=GetDistribution(Writer_Fluent,'DFTest')

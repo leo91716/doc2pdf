@@ -275,7 +275,7 @@ class Writer_Fluent(Writer_Track):  #newScore(data, mean,std, new_mean, new_std)
         i0=['','總正確數']
         i1=['',         '情境1\n黑點相連',                                '情境2\n白點相連',             '情境3 黑點和白點互相轉換','設計流暢性\n總和']
         i2=['原始分數']+Writer_Fluent.getBasicMeasureI2(reader)
-        i3=['量尺\n分數']+self.getScaleAndPr('table2', i2[1:],reverse=self.getNormReverse()[0])[0]
+        i3=['量尺分數']+self.getScaleAndPr('table2', i2[1:],reverse=self.getNormReverse()[0])[0]
         i4=['PR值']+self.getScaleAndPr('table2', i2[1:],reverse=self.getNormReverse()[0])[1]
         self.tableList2=[i0,i1,i2,i3,i4]
         merge=[(0,1),(0,4)]
@@ -298,24 +298,28 @@ class Writer_Fluent(Writer_Track):  #newScore(data, mean,std, new_mean, new_std)
         self.add_paragraph('衍生測量:')
         self.add_table([4,3],tableList3)
     @staticmethod
-    def  getOptionalTableI2(reader):
+    def  getOptionalTableI2(reader,table2):
+        row=table2[0]
         getData=reader.getData
         getDataArg1=['Examing','Total_UnCorrectDesign',False]
         getDataArg2=['Examing','Total_RepeatDesign',False]
         getDataArg3=['Examing','Total_TryDesign',False]
-        return [getData(*getDataArg1,'情境1_黑點相連')+getData(*getDataArg1,'情境2_白點相連')+getData(*getDataArg1,'情境3_黑點和白點互相轉換'),
+        final=[getData(*getDataArg1,'情境1_黑點相連')+getData(*getDataArg1,'情境2_白點相連')+getData(*getDataArg1,'情境3_黑點和白點互相轉換'),
         getData(*getDataArg2,'情境1_黑點相連')+getData(*getDataArg2,'情境2_白點相連')+getData(*getDataArg2,'情境3_黑點和白點互相轉換'),
         getData(*getDataArg3,'情境1_黑點相連')+getData(*getDataArg3,'情境2_白點相連')+getData(*getDataArg3,'情境3_黑點和白點互相轉換')]
+        finalEnd=[row[3]/final[2]]
+        return final+finalEnd
 
     def getOptionalTable(self): #getData(self, task,item,thousand=True,doubleCheck=None)
         self.add_paragraph('')
         self.add_paragraph('選擇性測量')
-        table2=self.tableList2[2]
+        table2=[x[1:] for x in self.tableList2[2:]]
+        # table2=self.tableList2[2]
         i1=['',        '不正確設計數','重複設計','嘗試設計總數','正確設計\n百分比']
 
-        i2=['原始總分']+Writer_Fluent.getOptionalTableI2(self.reader)
-        i2End=[table2[4]/i2[3]]
-        i2=i2+i2End
+        i2=['原始總分']+Writer_Fluent.getOptionalTableI2(self.reader,table2)
+        # i2End=[table2[4]/i2[3]]
+        # i2=i2+i2End
         i3=['量尺分數']+self.getScaleAndPr('table4', i2[1:],reverse=self.getNormReverse()[2])[0]
         i4=['PR值']+self.getScaleAndPr('table4', i2[1:],reverse=self.getNormReverse()[2])[1]
         tableList4=[i1,i2,i3,i4]
