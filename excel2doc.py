@@ -269,7 +269,6 @@ class Writer_Fluent(Writer_Track):  #newScore(data, mean,std, new_mean, new_std)
         table4=[True,True,False,False]
         tables=[table2,table3,table4]
         return tables
-        return False
     def getBasicMeasure(self):
         self.add_paragraph('')
         self.add_title('設計流暢性測驗')
