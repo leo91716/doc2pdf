@@ -178,7 +178,7 @@ class Writer_Track():
                         scale.append(item[1:])
                     else:
                         if itemIndex==0:
-                            pass
+                            scale.append(item[1:])
                         else:
                             result=[]
                             scaleResult=self.getInnerValue(data[index],column[itemIndex-1][0],column[itemIndex][0],column[itemIndex-1][1],column[itemIndex][1])
@@ -192,7 +192,7 @@ class Writer_Track():
                             scale.append(result)
                     break
                 elif itemIndex==len(column)-1: #if you didn't catch anything
-                    pass
+                    scale.append(item[1:])
 
         # print('\n\nscale: ',scale)
         scale=np.array(scale)
