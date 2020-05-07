@@ -17,7 +17,7 @@ import csv
 from tkinter.ttk import Combobox
 import pickle
 import numpy as np
-from writer import ShowDoc
+from writer import Writers
 
 def callback_error(*args):
     # Build the error message
@@ -60,10 +60,12 @@ class Primary():
                 with open(file,newline='') as csvfile:
                     rows = list(csv.reader(csvfile))
                     reader=Reader(rows)
-                    if exper=='軌跡標示測驗':
-                        writer=Writer_Track(reader,norm)
-                    else:
-                        writer=Writer_Fluent(reader,norm)
+                    # if exper=='軌跡標示測驗':
+                    #     # writer=Writer_Track(reader,norm)
+                    writer=Writers(reader,norm,exper)
+                        
+                    # else:
+                    #     writer=Writer_Fluent(reader,norm)
                     self.excel2doc(writer, file,dest_folder)
                     i+=1
                     pb["value"] = i
