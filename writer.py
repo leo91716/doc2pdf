@@ -1,4 +1,9 @@
 class Writers():
+    def __init__(tableNumber):
+        tables=[]
+        for i in range(tableNumber):
+            table=Table()
+            tables[i]=table
     def createDoc(self,reader,norm):
         self.norm=norm
         self.reader=reader
@@ -35,12 +40,11 @@ class Writers():
 
 
 
-class table():
-    def __init__(self,doc):
-        self.doc=doc
+class Table():
     def getData(*args):
         pass
-    def create(title,reader):
+    def create(title,reader,doc):
+        self.doc=doc
         i1=['']+title
         i2=['原始\n分數']+self.getData(reader)
         print(i2)
@@ -73,8 +77,8 @@ class table():
                     break
                 elif itemIndex==len(column)-1: #if you didn't catch anything
                     scale.append(item[1:])
-    def add_table(self,size,context, merge=[]):
-        table = self.doc.add_table(rows = size[0], cols = size[1], style='TableGrid')
+     def add_table(self,size,context, merge=[]):
+            table = self.doc.add_table(rows = size[0], cols = size[1], style='TableGrid')
         for index, item in enumerate(context):
             for index2, item2 in enumerate(item):
                 if isinstance(item2,float):
@@ -89,3 +93,11 @@ class table():
             a=table.cell(*merge[0])
             b=table.cell(*merge[1])
             a.merge(b)
+
+
+class ShowDoc():
+    def __init__(self,reader,norm):
+        writers=Writers(3)
+
+
+    

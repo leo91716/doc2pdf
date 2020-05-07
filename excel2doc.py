@@ -17,6 +17,7 @@ import csv
 from tkinter.ttk import Combobox
 import pickle
 import numpy as np
+from writer import ShowDoc
 
 def callback_error(*args):
     # Build the error message
