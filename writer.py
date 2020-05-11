@@ -85,11 +85,29 @@ class Writers():
 
     def write_all(self):
         pass
-
+class OverwriteError(Exception):
+    def __init__(self,method1):
+        super(Exception, self).__init__('This method should be overwritten', method1+' is not overwritten')
+        self.cause = cause
+        self.message = message
+    def __str__(self):
+        return self.cause + ': ' + self.message
+class Table_Track(Table):
+    def getNormReverse(self):
+        talbe2 = [True, True, True, True, True]
+        talbe3 = [False, False, False, False, False, False]
+        tables = [talbe2, talbe3]
+        return tables[self.table]
+class Table_Fluent(Table):
+    def getNormReverse(self):
+        table2=[False,False,False,False]
+        table3=[False,False]
+        table4=[True,True,False,False]
+        tables=[table2,table3,table4]
+        return tables[self.table]
 
 class Table():
-
-    def __init__(self, title, word, table, doc,norm, *args,merge=[]):
+    def __init(self, title, word, table, doc,norm, *args,merge=[]):
         self.doc = doc
         self.word=word
         self.table=table
@@ -107,16 +125,8 @@ class Table():
         self.tableList = i1+[ i2, i3, i4]
         self.add_table([len(self.tableList), len(i2)], self.tableList,merge)
     def getNormReverse(self):
-        if self.word=='軌跡標示測驗':
-            talbe2 = [True, True, True, True, True]
-            talbe3 = [False, False, False, False, False, False]
-            tables = [talbe2, talbe3]
-        elif self.word=="設計流暢測驗":
-            table2=[False,False,False,False]
-            table3=[False,False]
-            table4=[True,True,False,False]
-            tables=[table2,table3,table4]
-        return tables[self.table]
+        raise OverwriteError('getNormReverse')
+
     def getData(self, *args):
         word=self.word
         table=self.table
@@ -211,4 +221,4 @@ class Table():
 
 
 
-    
+
